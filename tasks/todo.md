@@ -56,3 +56,4 @@
 - [x] Prevent duplicated rescheduled matches from being counted twice in the live table when fussball.de lists the same fixture in multiple matchdays.
 - [x] Suppress hydration mismatches on the root body when browser extensions inject client-only attributes.
 - [ ] Add table and matchlist affordances for truncated content, trend explanation, withdrawn-team hints, dark mode, and CSV export.
+- [x] Remove unused Next.js starter SVG assets from `webapp/public`.
