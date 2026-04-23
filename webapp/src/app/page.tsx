@@ -16,12 +16,14 @@ import type {
   Option,
   SearchBootstrap,
   SearchFilters,
+  TableZone,
 } from "@/lib/fussballde/types";
 import {
   countCommittedEdits,
   countPendingEdits,
   getEffectiveResult,
   getTableDelta,
+  getTableZoneForRank,
   hasCommittedEdit,
   hasTableAdjustments,
   hasPendingEdit,
@@ -51,6 +53,34 @@ const EMPTY_FILTERS: SearchFilters = {
   leagueId: "",
   areaId: "",
 };
+
+function getTableZoneLabel(zone: TableZone): string {
+  if (zone === "promotion") {
+    return "Aufstiegszone";
+  }
+
+  if (zone === "promotion-playoff") {
+    return "Aufstiegs-Relegation";
+  }
+
+  if (zone === "relegation-playoff") {
+    return "Abstiegs-Relegation";
+  }
+
+  return "Abstiegszone";
+}
+
+function isPromotionZone(zone: TableZone | undefined): boolean {
+  return zone === "promotion";
+}
+
+function isPlayoffZone(zone: TableZone | undefined): boolean {
+  return zone === "promotion-playoff" || zone === "relegation-playoff";
+}
+
+function isRelegationZone(zone: TableZone | undefined): boolean {
+  return zone === "relegation";
+}
 
 function signedDelta(value: number): string {
   return value > 0 ? `+${value}` : `${value}`;
@@ -777,6 +807,7 @@ export function TabellenrechnerPage({
             {computedTable.map((row) => {
               const delta = getTableDelta(row, competition.importedTable);
               const isTeamActive = row.teamId === activeTeamId;
+              const tableZone = getTableZoneForRank(row, competition.importedTable);
               const trendLabel =
                 delta.positionDelta > 0
                   ? `↑${delta.positionDelta}`
@@ -789,14 +820,21 @@ export function TabellenrechnerPage({
                   key={row.teamId}
                   className={[
                     styles.tableRow,
+                    isPromotionZone(tableZone) ? styles.tableRowPromotionZone : "",
+                    isPlayoffZone(tableZone) ? styles.tableRowPlayoffZone : "",
+                    isRelegationZone(tableZone) ? styles.tableRowRelegationZone : "",
                     isTeamActive ? styles.tableRowActive : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  title={tableZone ? getTableZoneLabel(tableZone) : undefined}
                 >
                   <td
                     className={[
                       styles.rankCell,
+                      isPromotionZone(tableZone) ? styles.rankCellPromotionZone : "",
+                      isPlayoffZone(tableZone) ? styles.rankCellPlayoffZone : "",
+                      isRelegationZone(tableZone) ? styles.rankCellRelegationZone : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}

@@ -4,7 +4,7 @@ import type { AnyNode } from "domhandler";
 import { decodeObfuscatedText } from "@/lib/fussballde/font-decoder";
 import { fetchUpstreamText } from "./request";
 import { createEmptyTableAdjustment, recalculateTableFromResults } from "../table-calculator";
-import type { Competition, ImportedMatch, MatchResult, Matchday, TableRow } from "@/lib/fussballde/types";
+import type { Competition, ImportedMatch, MatchResult, Matchday, TableRow, TableZone } from "@/lib/fussballde/types";
 
 const LEGACY_HOST = "https://www.fussball.de";
 const SUPPORTED_IMPORT_HOSTS = new Set(["fussball.de", "www.fussball.de", "next.fussball.de"]);
@@ -268,6 +268,7 @@ function parseTable($: CheerioAPI): TableRow[] {
       teamId: parseTeamId(teamLink.attr("href") ?? teamName),
       teamName,
       teamLogoUrl: parseTeamLogoUrl(teamLink),
+      tableZone: parseTableZone($row),
       rank,
       originalRank: rank,
       games,
@@ -282,6 +283,26 @@ function parseTable($: CheerioAPI): TableRow[] {
   }
 
   return rows;
+}
+
+function parseTableZone($row: Cheerio<AnyNode>): TableZone | undefined {
+  if ($row.hasClass("row-promotion")) {
+    return "promotion";
+  }
+
+  if ($row.hasClass("row-promotion-playoff")) {
+    return "promotion-playoff";
+  }
+
+  if ($row.hasClass("row-relegation-playoff")) {
+    return "relegation-playoff";
+  }
+
+  if ($row.hasClass("row-relegation")) {
+    return "relegation";
+  }
+
+  return undefined;
 }
 
 function parseScoreValue(value: string): number | null {

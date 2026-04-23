@@ -1035,7 +1035,7 @@
   text-align: center;
 }
 
-.table tbody tr.tableRow:not(.tableRowTopZone):nth-child(even) {
+.table tbody tr.tableRow:not(.tableRowTopZone, .tableRowPromotionZone, .tableRowPlayoffZone, .tableRowRelegationZone):nth-child(even) {
   --table-row-bg: color-mix(in srgb, var(--row-even) 92%, #fff);
 }
 
@@ -1069,6 +1069,11 @@
 }
 
 .rankCellRelegationZone {
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--danger) 88%, #3b1d1d);
+  color: color-mix(in srgb, var(--danger) 72%, var(--text) 28%);
+}
+
+.rankCellPlayoffZone {
   box-shadow: inset 4px 0 0 color-mix(in srgb, var(--warning) 88%, #3b2f1d);
   color: color-mix(in srgb, var(--warning) 72%, var(--text) 28%);
 }
@@ -1089,8 +1094,36 @@
   --table-row-bg: color-mix(in srgb, var(--success) 6%, white);
 }
 
+.tableRowPromotionZone:nth-child(odd) {
+  --table-row-bg: color-mix(in srgb, var(--success) 6%, white);
+}
+
+.tableRowPromotionZone:nth-child(even) {
+  --table-row-bg: color-mix(in srgb, var(--success) 10%, white);
+}
+
 .tableRowRelegationZone {
-  --table-row-bg: color-mix(in srgb, var(--warning) 6%, white);
+  --table-row-bg: color-mix(in srgb, var(--danger) 6%, white);
+}
+
+.tableRowRelegationZone:nth-child(odd) {
+  --table-row-bg: color-mix(in srgb, var(--danger) 6%, white);
+}
+
+.tableRowRelegationZone:nth-child(even) {
+  --table-row-bg: color-mix(in srgb, var(--danger) 10%, white);
+}
+
+.tableRowPlayoffZone {
+  --table-row-bg: color-mix(in srgb, var(--warning) 7%, white);
+}
+
+.tableRowPlayoffZone:nth-child(odd) {
+  --table-row-bg: color-mix(in srgb, var(--warning) 7%, white);
+}
+
+.tableRowPlayoffZone:nth-child(even) {
+  --table-row-bg: color-mix(in srgb, var(--warning) 12%, white);
 }
 
 .tableRowRelegationDirectZone {

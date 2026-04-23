@@ -5,6 +5,7 @@ import type {
   MatchResult,
   TableAdjustment,
   TableRow,
+  TableZone,
 } from "@/lib/fussballde/types";
 
 export function createEmptyTableAdjustment(): TableAdjustment {
@@ -310,4 +311,8 @@ export function getTableDelta(row: TableRow, importedTable: TableRow[]) {
     positionDelta: importedRank - row.rank,
     pointsDelta: row.points - importedPoints,
   };
+}
+
+export function getTableZoneForRank(row: TableRow, importedTable: TableRow[]): TableZone | undefined {
+  return importedTable[row.rank - 1]?.tableZone;
 }

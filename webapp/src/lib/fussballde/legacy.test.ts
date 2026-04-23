@@ -117,6 +117,39 @@ describe("loadCompetitionFromUrl", () => {
     );
   });
 
+  it("reads fussball.de promotion and relegation row markers from the imported table", async () => {
+    const competition = await loadCompetitionFromUrl(
+      "https://www.fussball.de/spieltag/test/staffel/02TMJM5PBK00000AVS5489BUVSSD35NB-G#!/",
+    );
+
+    expect(competition.importedTable.slice(0, 2).map((row) => row.tableZone)).toEqual([
+      "promotion",
+      "promotion",
+    ]);
+    expect(competition.importedTable.slice(-2).map((row) => row.tableZone)).toEqual([
+      "relegation",
+      "relegation",
+    ]);
+  });
+
+  it("reads fussball.de playoff row markers from the imported table", async () => {
+    fetchMock.mockImplementation(async () =>
+      new Response(
+        sampleLegacyHtml
+          .replace('class="row-promotion"', 'class="row-promotion-playoff"')
+          .replace('class="row-relegation"', 'class="row-relegation-playoff"'),
+        { status: 200 },
+      ),
+    );
+
+    const competition = await loadCompetitionFromUrl(
+      "https://www.fussball.de/spieltag/test/staffel/02TMJM5PBK00000AVS5489BUVSSD35NB-G#!/",
+    );
+
+    expect(competition.importedTable[0]?.tableZone).toBe("promotion-playoff");
+    expect(competition.importedTable.at(-2)?.tableZone).toBe("relegation-playoff");
+  });
+
   it("canonicalizes supported next.fussball.de imports to legacy staffel URLs", async () => {
     await loadCompetitionFromUrl("https://next.fussball.de/wettbewerb/-/02TMJM5PBK00000AVS5489BUVSSD35NB-G/tabelle");
 

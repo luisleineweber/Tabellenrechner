@@ -3,6 +3,7 @@ import {
   countCommittedEdits,
   countPendingEdits,
   getEffectiveResult,
+  getTableZoneForRank,
   recalculateTable,
 } from "./table-calculator";
 import type { Competition } from "@/lib/fussballde/types";
@@ -22,6 +23,7 @@ const competition: Competition = {
     {
       teamId: "a",
       teamName: "Team A",
+      tableZone: "promotion",
       rank: 1,
       originalRank: 1,
       games: 2,
@@ -50,6 +52,7 @@ const competition: Competition = {
     {
       teamId: "c",
       teamName: "Team C",
+      tableZone: "relegation",
       rank: 3,
       originalRank: 3,
       games: 2,
@@ -137,6 +140,11 @@ describe("recalculateTable", () => {
       "1-Team B-6",
       "2-Team A-1",
       "3-Team C-1",
+    ]);
+    expect(table.map((row) => `${row.teamName}-${getTableZoneForRank(row, competition.importedTable) ?? "none"}`)).toEqual([
+      "Team B-promotion",
+      "Team A-none",
+      "Team C-relegation",
     ]);
   });
 

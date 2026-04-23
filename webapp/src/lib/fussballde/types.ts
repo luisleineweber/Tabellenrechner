@@ -58,10 +58,13 @@ export type Matchday = {
   matches: ImportedMatch[];
 };
 
+export type TableZone = "promotion" | "promotion-playoff" | "relegation-playoff" | "relegation";
+
 export type TableRow = {
   teamId: string;
   teamName: string;
   teamLogoUrl?: string | undefined;
+  tableZone?: TableZone | undefined;
   rank: number;
   originalRank: number;
   games: number;

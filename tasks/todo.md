@@ -1,5 +1,13 @@
 # Todo
 
+- [x] Add green, orange, and red odd/even table zone row variants.
+
+- [x] Add fussball.de playoff table zones and render them orange.
+
+- [x] Add fussball.de table zone import for promotion/relegation rows.
+- [x] Render imported promotion/relegation zones in the recalculated live table.
+- [x] Verify parser/table behavior with fixture tests plus lint/build.
+
 - [x] Restyle matchday tabs so the Spieltag number is visually primary and match count is secondary.
 - [x] Polish previous/next matchday buttons and score controls.
 - [x] Verify lint/build after the UI styling pass.
