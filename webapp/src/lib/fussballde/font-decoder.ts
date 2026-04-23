@@ -1,4 +1,5 @@
 import * as fontkit from "fontkit";
+import { fetchUpstreamBuffer } from "./request";
 
 const FONT_BASE_URL = "https://www.fussball.de/export.fontface/-/format/ttf/id";
 
@@ -41,18 +42,10 @@ function mapGlyphNameToCharacter(name: string | null | undefined, fallback: stri
 }
 
 async function loadFontMapping(fontId: string): Promise<Map<number, string>> {
-  const response = await fetch(`${FONT_BASE_URL}/${fontId}/type/font`, {
+  const buffer = await fetchUpstreamBuffer(`${FONT_BASE_URL}/${fontId}/type/font`, {
     cache: "force-cache",
-    headers: {
-      "user-agent": "Mozilla/5.0 Tabellenrechner",
-    },
+    errorBase: `Obfuscation-Font '${fontId}' konnte nicht geladen werden`,
   });
-
-  if (!response.ok) {
-    throw new Error(`Obfuscation-Font '${fontId}' konnte nicht geladen werden.`);
-  }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
   const font = fontkit.create(buffer);
   const mapping = new Map<number, string>();
 

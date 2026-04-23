@@ -99,6 +99,34 @@ export function normalizeInputToNullableNumber(value: string): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function normalizeEditResult(
+  match: ImportedMatch,
+  edit: EditableResultMap[string],
+): { result: MatchResult; pending: boolean } {
+  const home = normalizeInputToNullableNumber(edit.home);
+  const guest = normalizeInputToNullableNumber(edit.guest);
+  const pending = (home === null) !== (guest === null);
+
+  if (pending) {
+    return {
+      result: match.originalResult,
+      pending: true,
+    };
+  }
+
+  return {
+    result: {
+      home,
+      guest,
+    },
+    pending: false,
+  };
+}
+
+function resultsEqual(left: MatchResult, right: MatchResult): boolean {
+  return left.home === right.home && left.guest === right.guest;
+}
+
 export function getEffectiveResult(match: ImportedMatch, edits: EditableResultMap): MatchResult {
   const edit = edits[match.id];
 
@@ -106,10 +134,7 @@ export function getEffectiveResult(match: ImportedMatch, edits: EditableResultMa
     return match.originalResult;
   }
 
-  return {
-    home: normalizeInputToNullableNumber(edit.home),
-    guest: normalizeInputToNullableNumber(edit.guest),
-  };
+  return normalizeEditResult(match, edit).result;
 }
 
 export function hasPendingEdit(match: ImportedMatch, edits: EditableResultMap): boolean {
@@ -119,14 +144,65 @@ export function hasPendingEdit(match: ImportedMatch, edits: EditableResultMap): 
     return false;
   }
 
-  const home = normalizeInputToNullableNumber(edit.home);
-  const guest = normalizeInputToNullableNumber(edit.guest);
+  return normalizeEditResult(match, edit).pending;
+}
 
-  return (home === null) !== (guest === null);
+export function hasCommittedEdit(match: ImportedMatch, edits: EditableResultMap): boolean {
+  const edit = edits[match.id];
+
+  if (!edit) {
+    return false;
+  }
+
+  const { pending, result } = normalizeEditResult(match, edit);
+
+  return !pending && !resultsEqual(result, match.originalResult);
 }
 
 export function countActiveEdits(edits: EditableResultMap): number {
   return Object.keys(edits).length;
+}
+
+export function countCommittedEdits(competition: Competition, edits: EditableResultMap): number {
+  const countedMatchIds = new Set<string>();
+  let count = 0;
+
+  for (const matchday of competition.matchdays) {
+    for (const match of matchday.matches) {
+      if (countedMatchIds.has(match.id)) {
+        continue;
+      }
+
+      countedMatchIds.add(match.id);
+
+      if (hasCommittedEdit(match, edits)) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
+}
+
+export function countPendingEdits(competition: Competition, edits: EditableResultMap): number {
+  const countedMatchIds = new Set<string>();
+  let count = 0;
+
+  for (const matchday of competition.matchdays) {
+    for (const match of matchday.matches) {
+      if (countedMatchIds.has(match.id)) {
+        continue;
+      }
+
+      countedMatchIds.add(match.id);
+
+      if (hasPendingEdit(match, edits)) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
 }
 
 export function recalculateTableFromResults(

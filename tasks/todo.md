@@ -1,5 +1,13 @@
 # Todo
 
+- [x] Restyle matchday tabs so the Spieltag number is visually primary and match count is secondary.
+- [x] Polish previous/next matchday buttons and score controls.
+- [x] Verify lint/build after the UI styling pass.
+
+- [x] Diagnose current broken code state with lint/tests/build and inspect changed files.
+- [x] Fix the smallest set of compile/runtime/test failures without discarding unrelated work.
+- [x] Re-run verification and record any repair lesson before marking this slice done.
+
 - [x] Add repository metadata, MIT license, and root `.gitignore`.
 - [x] Define the project scope for a standalone `fussball.de` Tabellenrechner and align repo instructions.
 - [x] Set up the `webapp` Next.js workspace and install parser/test dependencies.
@@ -55,5 +63,20 @@
 - [x] Tighten the remaining mobile spacing between intro, competition picker, info modules, and matchday sections.
 - [x] Prevent duplicated rescheduled matches from being counted twice in the live table when fussball.de lists the same fixture in multiple matchdays.
 - [x] Suppress hydration mismatches on the root body when browser extensions inject client-only attributes.
-- [ ] Add table and matchlist affordances for truncated content, trend explanation, withdrawn-team hints, dark mode, and CSV export.
+- [x] Review frontend/backend against the Kicker Tabellenrechner reference and capture addable feature gaps.
+- [x] Add Kicker-style score steppers and improve pending/unchanged edit handling so one-sided edits do not create surprising table jumps.
+- [x] Add a mobile live-table preview with a fullscreen table view while keeping the desktop split layout.
+- [x] Restore the full mobile table above the match list and keep a compact table-focus rail for quick club jumps.
+- [x] Prioritize club names on mobile by removing score steppers there and dropping the outer shell gutters.
+- [x] Box the editable result area and place the home plus button on the left edge and the guest plus button on the right edge.
+- [ ] Add table and matchlist affordances for truncated content, trend explanation, and withdrawn-team hints.
+- [ ] Add scenario export/share affordances, including CSV export and URL-shareable edited predictions.
+- [ ] Add dark mode with the existing red editorial identity preserved.
+- [x] Harden competition import fetches with timeout/retry behavior and clearer parser failures.
+- [ ] Add optional short-lived server-side caching for imported competition pages and obfuscation fonts.
 - [x] Remove unused Next.js starter SVG assets from `webapp/public`.
+- [x] Simplify the desktop shell and widen the workspace so match rows have more room for team names.
+- [x] Refine the desktop filter, table, and fixtures hierarchy with clearer spacing, zone bands, and larger score controls.
+- [x] Add a separate mobile stacked-view route with all matchdays visible and a side live-table rail.
+- [x] Refine the stacked mobile route with a persistent right-side table rail and denser score inputs.
+- [x] Replace the split mobile table rail with a shared sticky live-table dock and wider touch controls across both mobile layouts.

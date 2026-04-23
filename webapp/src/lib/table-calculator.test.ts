@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { recalculateTable } from "./table-calculator";
+import {
+  countCommittedEdits,
+  countPendingEdits,
+  getEffectiveResult,
+  recalculateTable,
+} from "./table-calculator";
 import type { Competition } from "@/lib/fussballde/types";
 
 const competition: Competition = {
@@ -135,12 +140,27 @@ describe("recalculateTable", () => {
     ]);
   });
 
-  it("ignores incomplete edited results", () => {
+  it("keeps the original result active while an edit is incomplete", () => {
     const table = recalculateTable(competition, {
       m2: { home: "4", guest: "" },
     });
 
-    expect(table.map((row) => row.points)).toEqual([4, 1, 0]);
+    expect(table.map((row) => row.points)).toEqual([4, 3, 1]);
+    expect(
+      getEffectiveResult(competition.matchdays[1].matches[0], {
+        m2: { home: "4", guest: "" },
+      }),
+    ).toEqual({ home: 3, guest: 0 });
+  });
+
+  it("counts committed and pending edits separately", () => {
+    const edits = {
+      m1: { home: "0", guest: "2" },
+      m2: { home: "4", guest: "" },
+    };
+
+    expect(countCommittedEdits(competition, edits)).toBe(1);
+    expect(countPendingEdits(competition, edits)).toBe(1);
   });
 
   it("counts rescheduled duplicate fixtures only once when the same match id appears in multiple matchdays", () => {

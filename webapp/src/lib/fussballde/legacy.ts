@@ -2,12 +2,12 @@ import { load } from "cheerio";
 import type { Cheerio, CheerioAPI } from "cheerio";
 import type { AnyNode } from "domhandler";
 import { decodeObfuscatedText } from "@/lib/fussballde/font-decoder";
+import { fetchUpstreamText } from "./request";
 import { createEmptyTableAdjustment, recalculateTableFromResults } from "../table-calculator";
 import type { Competition, ImportedMatch, MatchResult, Matchday, TableRow } from "@/lib/fussballde/types";
 
 const LEGACY_HOST = "https://www.fussball.de";
 const SUPPORTED_IMPORT_HOSTS = new Set(["fussball.de", "www.fussball.de", "next.fussball.de"]);
-const USER_AGENT = "Mozilla/5.0 Tabellenrechner";
 
 type MatchdayOption = {
   number: number;
@@ -123,18 +123,10 @@ function extractScriptValue(html: string, key: string): string {
 }
 
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
+  return fetchUpstreamText(url, {
     cache: "no-store",
-    headers: {
-      "user-agent": USER_AGENT,
-    },
+    errorBase: `Abruf von '${url}' fehlgeschlagen`,
   });
-
-  if (!response.ok) {
-    throw new Error(`Abruf von '${url}' fehlgeschlagen (${response.status}).`);
-  }
-
-  return response.text();
 }
 
 async function decodeNodeText(node: Cheerio<AnyNode>): Promise<string> {
@@ -144,12 +136,30 @@ async function decodeNodeText(node: Cheerio<AnyNode>): Promise<string> {
   return decoded.replace(/\s+/g, " ").trim();
 }
 
-function parseNumber(value: string): number {
-  return Number.parseInt(value.replace(/[^\d-]/g, ""), 10);
+function parseOptionalNumber(value: string): number | null {
+  const parsed = Number.parseInt(value.replace(/[^\d-]/g, ""), 10);
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
-function parseRatio(value: string): { goalsFor: number; goalsAgainst: number } {
-  const [goalsFor, goalsAgainst] = value.split(":").map((part) => parseNumber(part));
+function parseRequiredNumber(value: string, context: string): number {
+  const parsed = parseOptionalNumber(value);
+
+  if (parsed === null) {
+    throw new Error(`${context} konnte nicht gelesen werden.`);
+  }
+
+  return parsed;
+}
+
+function parseRequiredRatio(value: string, context: string): { goalsFor: number; goalsAgainst: number } {
+  const [goalsForRaw, goalsAgainstRaw] = value.split(":");
+
+  if (goalsForRaw === undefined || goalsAgainstRaw === undefined) {
+    throw new Error(`${context} konnte nicht gelesen werden.`);
+  }
+
+  const goalsFor = parseRequiredNumber(goalsForRaw, `${context} (Heimtore)`);
+  const goalsAgainst = parseRequiredNumber(goalsAgainstRaw, `${context} (Gegentore)`);
   return { goalsFor, goalsAgainst };
 }
 
@@ -220,7 +230,7 @@ function parseMatchdayOptions($: CheerioAPI): MatchdayOption[] {
     .map((option) => {
       const $option = $(option);
       const label = $option.text().trim();
-      const number = parseNumber(label);
+      const number = parseOptionalNumber(label) ?? 0;
       return {
         number,
         label,
@@ -244,14 +254,15 @@ function parseTable($: CheerioAPI): TableRow[] {
     }
 
     const cells = $row.find("td");
-    const rank = parseNumber($row.find("td.column-rank").text());
-    const games = parseNumber(cells.eq(3).text());
-    const wins = parseNumber(cells.eq(4).text());
-    const draws = parseNumber(cells.eq(5).text());
-    const losses = parseNumber(cells.eq(6).text());
-    const ratio = parseRatio(cells.eq(7).text());
-    const goalDifference = parseNumber(cells.eq(8).text());
-    const points = parseNumber(cells.eq(9).text());
+    const teamContext = `Tabellenzeile für '${teamName}'`;
+    const rank = parseRequiredNumber($row.find("td.column-rank").text(), `${teamContext}: Platz`);
+    const games = parseRequiredNumber(cells.eq(3).text(), `${teamContext}: Spiele`);
+    const wins = parseRequiredNumber(cells.eq(4).text(), `${teamContext}: Siege`);
+    const draws = parseRequiredNumber(cells.eq(5).text(), `${teamContext}: Unentschieden`);
+    const losses = parseRequiredNumber(cells.eq(6).text(), `${teamContext}: Niederlagen`);
+    const ratio = parseRequiredRatio(cells.eq(7).text(), `${teamContext}: Tore`);
+    const goalDifference = parseRequiredNumber(cells.eq(8).text(), `${teamContext}: Tordifferenz`);
+    const points = parseRequiredNumber(cells.eq(9).text(), `${teamContext}: Punkte`);
 
     rows.push({
       teamId: parseTeamId(teamLink.attr("href") ?? teamName),

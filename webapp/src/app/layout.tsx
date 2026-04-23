@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { Roboto_Condensed, Roboto } from "next/font/google";
+import { Roboto, Roboto_Condensed } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { siteConfig } from "@/lib/site";
@@ -103,13 +103,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         <div className="siteShell">
-          <header className="siteHeader">
-            <div className="siteHeaderInner">
-              <span className="siteWordmark">Tabellenrechner</span>
-              <span className="siteSub">für fussball.de</span>
-            </div>
-          </header>
-
           <div className="siteMain">{children}</div>
 
           <footer className="siteFooter">

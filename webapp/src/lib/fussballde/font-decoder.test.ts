@@ -7,7 +7,7 @@ afterEach(() => {
 });
 
 describe("decodeObfuscatedText", () => {
-  it("retries a font download after an earlier failure for the same font id", async () => {
+  it("retries a transient font download failure within the same decode request", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
@@ -23,9 +23,6 @@ describe("decodeObfuscatedText", () => {
 
     const { decodeObfuscatedText } = await import("./font-decoder");
 
-    await expect(decodeObfuscatedText("A", "font-1")).rejects.toThrow(
-      "Obfuscation-Font 'font-1' konnte nicht geladen werden.",
-    );
     await expect(decodeObfuscatedText("A", "font-1")).resolves.toBe("1");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

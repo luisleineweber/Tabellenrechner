@@ -9,6 +9,8 @@
   max-width: 1280px;
 }
 
+
+
 .intro {
   background:
     linear-gradient(135deg, rgba(224, 36, 36, 0.06), transparent 45%),
@@ -148,7 +150,7 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  margin-bottom: 3px;
+  margin-bottom: 8px;
 }
 
 .panelKicker {
@@ -171,7 +173,7 @@
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.4;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
 .mobileOnly {
@@ -248,8 +250,8 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  margin-bottom: 12px;
-  padding: 10px 0;
+  margin-bottom: 18px;
+  padding: 12px 0 14px;
 }
 
 .desktopImportInlineCopy {
@@ -273,8 +275,8 @@
 .desktopImportExpanded {
   border-top: 1px solid var(--border-light);
   border-bottom: 1px solid var(--border-light);
-  margin-bottom: 12px;
-  padding: 10px 0 12px;
+  margin-bottom: 18px;
+  padding: 12px 0 14px;
 }
 
 .desktopImportExpandedHeader {
@@ -315,8 +317,8 @@
 .selectGroup select,
 .selectGroupWide select {
   background: linear-gradient(180deg, #fff 0%, #f8f8f8 100%);
-  min-height: 44px;
-  padding: 18px 32px 7px 10px;
+  min-height: 46px;
+  padding: 18px 34px 8px 12px;
   transition:
     border-color 100ms ease,
     background 100ms ease;
@@ -335,7 +337,7 @@
 
 .filterGrid {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -356,7 +358,7 @@
   pointer-events: none;
   position: absolute;
   text-transform: uppercase;
-  top: 7px;
+  top: 8px;
   z-index: 1;
 }
 
@@ -369,8 +371,28 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.searchImportActions {
+  align-items: center;
+  background: linear-gradient(180deg, #fff 0%, #faf7f4 100%);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.searchImportSummary {
+  color: var(--text-muted);
+  flex: 1 1 280px;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.searchImportStatus {
+  width: 100%;
 }
 
 .primaryButton,
@@ -414,15 +436,21 @@
 }
 
 .tableResetButton {
-  background: linear-gradient(180deg, #fafafa 0%, #f1f1f1 100%);
-  border-color: #cfcfcf;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: linear-gradient(180deg, #fff6f6 0%, #f6ecec 100%);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 1px 0 rgba(15, 23, 42, 0.03);
+  color: color-mix(in srgb, var(--accent) 68%, var(--text) 32%);
+  font-weight: 600;
+  min-height: 38px;
+  padding-inline: 16px;
 }
 
 .tableResetButton:hover:not(:disabled) {
-  background: #f4f4f4;
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
   border-color: var(--accent);
-  color: var(--text);
+  color: var(--accent);
 }
 
 .dialogCloseButton {
@@ -474,6 +502,10 @@
 }
 
 .searchImportButton {
+  box-shadow: 0 10px 24px rgba(224, 36, 36, 0.16);
+  min-height: 46px;
+  min-width: 220px;
+  padding-inline: 20px;
   width: 100%;
 }
 
@@ -523,6 +555,393 @@
   width: 100%;
 }
 
+.fullTableDialog {
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+  inset: 0;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  min-height: 100dvh;
+  padding: 10px;
+  position: fixed;
+  width: 100%;
+}
+
+.fullTableDialog[open] {
+  display: grid;
+  align-items: end;
+}
+
+.fullTableDialog::backdrop {
+  background: rgba(15, 23, 42, 0.54);
+  backdrop-filter: blur(6px);
+}
+
+.fullTableDialogCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.26);
+  display: grid;
+  max-height: min(82dvh, 760px);
+  max-width: min(760px, calc(100vw - 20px));
+  overflow: hidden;
+  width: 100%;
+}
+
+.fullTableDialogCard .tableWrap {
+  max-height: calc(82dvh - 140px);
+  overflow: auto;
+}
+
+.mobileTableDock {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(249, 244, 238, 0.99) 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  bottom: 0;
+  box-shadow: 0 -10px 28px rgba(18, 26, 39, 0.12);
+  display: grid;
+  gap: 10px;
+  left: 50%;
+  max-width: min(var(--content-max-width), calc(100vw - 20px));
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  position: fixed;
+  transform: translateX(-50%);
+  width: calc(100vw - 20px);
+  z-index: 45;
+}
+
+.mobileTableDockHeader {
+  align-items: end;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.mobileTableDockHeaderCopy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mobileTableDockEyebrow {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mobileTableDockMeta {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.mobileTableDockActions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.mobileTableDockOpenButton,
+.mobileTableDockReset {
+  min-height: 40px;
+}
+
+.mobileTableDockOpenButton {
+  font-weight: 700;
+}
+
+.mobileTableDockRail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  touch-action: pan-x pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobileTableDockRail::-webkit-scrollbar {
+  display: none;
+}
+
+.mobileTableDockItem {
+  background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 4px;
+  min-width: 136px;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.mobileTableDockItemActive {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+}
+
+.mobileTableDockItemPromotion {
+  border-left: 4px solid color-mix(in srgb, var(--success) 88%, #1d3b28);
+}
+
+.mobileTableDockItemRelegation {
+  border-left: 4px solid color-mix(in srgb, var(--warning) 88%, #3b2f1d);
+}
+
+.mobileTableDockItemRelegationDirect {
+  border-left: 4px solid color-mix(in srgb, var(--danger) 88%, #3b1d1d);
+}
+
+.mobileTableDockItem:focus-visible,
+.mobileTableDockOpenButton:focus-visible,
+.mobileTableDockReset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mobileTableDockTopline {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.mobileTableDockRank,
+.mobileTableDockPoints {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mobileTableDockPoints {
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.mobileTableDockTeam {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mobileTableDockLogo {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  display: block;
+  flex: 0 0 18px;
+  height: 18px;
+  object-fit: contain;
+  width: 18px;
+}
+
+.mobileTableDockLogoPlaceholder {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  display: block;
+  flex: 0 0 18px;
+  height: 18px;
+  opacity: 0.45;
+  width: 18px;
+}
+
+.mobileTableDockName {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stackedMobileWorkspace {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 60px;
+}
+
+.stackedMobileHeadingRow {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+}
+
+.stackedMobileHeaderActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.stackedMobileMatchesPanelHeader {
+  border-bottom-width: 1px;
+  padding: 4px 8px;
+}
+
+.iconActionButton {
+  align-items: center;
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 18px;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+}
+
+.iconActionButton:hover:not(:disabled) {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.iconActionButton:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.stackedMobileRailColumn {
+  align-self: stretch;
+  min-height: 0;
+  position: sticky;
+  top: 8px;
+}
+
+.stackedMobileRail {
+  display: grid;
+  gap: 4px;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100dvh - 16px);
+  min-height: calc(100dvh - 16px);
+  overflow: clip;
+  padding: 0;
+  position: relative;
+  width: 60px;
+}
+
+.stackedMobileRailFixed {
+  position: fixed;
+  top: 8px;
+  z-index: 30;
+}
+
+.stackedMobileRailBottom {
+  bottom: 0;
+  position: absolute;
+  right: 0;
+}
+
+.stackedMobileRailHeader {
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  justify-items: end;
+  padding-bottom: 6px;
+}
+
+.stackedMobileRailTitle {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.stackedMobileRailList {
+  align-content: start;
+  display: grid;
+  gap: 0;
+  min-height: 0;
+}
+
+.stackedMobileRailItem {
+  align-items: center;
+  appearance: none;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--border-light);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 13px 7px 18px;
+  justify-items: end;
+  min-height: 26px;
+  padding: 3px 0;
+  text-align: center;
+}
+
+.stackedMobileRailItem:first-child {
+  border-top: 0;
+}
+
+.stackedMobileRailItem[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+}
+
+.stackedMobileRailRank {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.stackedMobileRailLogo,
+.stackedMobileRailLogoPlaceholder {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  display: block;
+  height: 18px;
+  width: 18px;
+}
+
+.stackedMobileRailLogo {
+  object-fit: contain;
+}
+
+.stackedMobileRailLogoPlaceholder {
+  opacity: 0.45;
+}
+
+.stackedMobileRailTrendUp,
+.stackedMobileRailTrendDown,
+.stackedMobileRailTrendFlat {
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 0;
+}
+
+.stackedMobileRailTrendUp {
+  color: var(--success);
+}
+
+.stackedMobileRailTrendDown {
+  color: var(--danger);
+}
+
+.stackedMobileRailTrendFlat {
+  color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
 /* ── Workspace (table + matches, stacked on mobile, side-by-side on desktop) ── */
 .workspace {
   display: grid;
@@ -535,6 +954,7 @@
   background: var(--bg);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  display: block;
   min-width: 0;
   padding: 0;
 }
@@ -570,6 +990,7 @@
 .tablePanelActions {
   align-items: flex-start;
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
   min-width: max-content;
 }
@@ -614,18 +1035,47 @@
   text-align: center;
 }
 
-.table tbody tr:nth-child(even) {
-  background: var(--row-even);
+.table tbody tr.tableRow:not(.tableRowTopZone):nth-child(even) {
+  --table-row-bg: color-mix(in srgb, var(--row-even) 92%, #fff);
+}
+
+.tableRow {
+  --table-row-bg: transparent;
+}
+
+.tableRow td {
+  background: var(--table-row-bg);
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .table tbody tr:hover {
-  background: #f0f0f0;
+  --table-row-bg: #f0f0f0;
 }
 
 .rankCell {
   font-weight: 700;
   text-align: center;
   width: 26px;
+}
+
+.rankCellTopZone {
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--success) 88%, #1d3b28);
+  color: color-mix(in srgb, var(--success) 72%, var(--text) 28%);
+}
+
+.rankCellPromotionZone {
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--success) 88%, #1d3b28);
+  color: color-mix(in srgb, var(--success) 72%, var(--text) 28%);
+}
+
+.rankCellRelegationZone {
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--warning) 88%, #3b2f1d);
+  color: color-mix(in srgb, var(--warning) 72%, var(--text) 28%);
+}
+
+.rankCellRelegationDirectZone {
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--danger) 88%, #3b1d1d);
+  color: color-mix(in srgb, var(--danger) 72%, var(--text) 28%);
 }
 
 .teamCell {
@@ -635,8 +1085,20 @@
   text-overflow: ellipsis;
 }
 
+.tableRowPromotionZone {
+  --table-row-bg: color-mix(in srgb, var(--success) 6%, white);
+}
+
+.tableRowRelegationZone {
+  --table-row-bg: color-mix(in srgb, var(--warning) 6%, white);
+}
+
+.tableRowRelegationDirectZone {
+  --table-row-bg: color-mix(in srgb, var(--danger) 6%, white);
+}
+
 .tableRowActive {
-  background: color-mix(in srgb, var(--accent) 10%, #fff) !important;
+  --table-row-bg: color-mix(in srgb, var(--accent) 10%, #fff);
 }
 
 .teamFocusButton {
@@ -863,14 +1325,14 @@
 .matchdayTab {
   background: var(--bg-alt);
   border: 1px solid var(--border-light);
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--text);
   cursor: pointer;
   display: grid;
   flex: 0 0 auto;
-  gap: 1px;
-  min-width: 104px;
-  padding: 7px 10px;
+  gap: 3px;
+  min-width: 110px;
+  padding: 9px 10px 8px;
   scroll-margin-inline: 48px;
   scroll-snap-align: start;
   text-align: left;
@@ -893,16 +1355,22 @@
 }
 
 .matchdayTab span {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  opacity: 0.78;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.05;
   text-transform: uppercase;
 }
 
 .matchdayTab strong {
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.1;
+}
+
+.matchdayTabActive strong {
+  color: color-mix(in srgb, #fff 78%, var(--accent));
 }
 
 .matchdayNav {
@@ -914,16 +1382,36 @@
 }
 
 .matchdayNavButton {
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fff 0%, #f3f1ee 100%);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--text-muted));
   border-radius: 999px;
   color: var(--text);
   cursor: pointer;
   font-size: 12px;
+  font-weight: 700;
   min-height: 40px;
   min-width: 0;
   padding: 0 14px;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
   width: 100%;
+}
+
+.matchdayNavButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 7%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.matchdayNavButton:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(0);
 }
 
 .matchdayNavButton:disabled {
@@ -994,25 +1482,47 @@
 
 .matchDateSplit {
   align-items: center;
-  background: color-mix(in srgb, var(--bg-alt) 76%, transparent);
+  background: color-mix(in srgb, var(--bg-alt) 54%, white);
   border-bottom: 1px solid var(--border-light);
-  color: var(--text-muted);
+  color: var(--text-light);
   display: flex;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
   min-height: 24px;
   padding: 0 10px;
+}
+
+.matchDateSplit span {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  letter-spacing: 0.02em;
+}
+
+.matchDateSplit span::after {
+  background: color-mix(in srgb, var(--border) 82%, white);
+  content: "";
+  display: block;
+  height: 1px;
+  width: 14px;
 }
 
 .matchRow {
   align-items: center;
   border-bottom: 1px solid var(--border-light);
   display: grid;
-  /* kickoff | home | score | guest | status | reset */
-  grid-template-columns: 40px 1fr auto 1fr auto auto;
-  min-height: 36px;
-  padding: 4px 8px;
+  /* kickoff | home | score | guest | status */
+  grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 28px;
+  min-height: 48px;
+  padding: 6px 8px;
+  gap: 0 8px;
+}
+
+.matchRowCompact {
   gap: 0 4px;
+  grid-template-columns: 34px minmax(0, 1fr) auto minmax(0, 1fr) 24px;
+  min-height: 32px;
+  padding-inline: 6px;
 }
 
 .matchRow:last-child {
@@ -1025,7 +1535,7 @@
 
 .matchKickoff {
   color: var(--text-light);
-  font-size: 10px;
+  font-size: 11px;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1033,22 +1543,22 @@
 }
 
 .matchHome {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   overflow: hidden;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 4px;
+  padding-right: 6px;
 }
 
 .matchGuest {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-left: 4px;
+  padding-left: 6px;
 }
 
 .scoreInputGroup {
@@ -1056,36 +1566,132 @@
   display: flex;
   flex: 0 0 auto;
   gap: 0;
+  justify-self: center;
 }
 
-.scoreInput {
-  background: var(--bg);
-  border: 1px solid var(--border);
+.scoreInputGroupCompact {
+  gap: 0;
+}
+
+.scoreStepper {
+  align-items: center;
+  background: linear-gradient(180deg, #fff 0%, #fbf8f6 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: 2px;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 700;
-  height: 26px;
-  outline: none;
-  text-align: center;
-  transition: border-color 100ms ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  color: color-mix(in srgb, var(--accent) 56%, var(--text) 44%);
+  cursor: pointer;
+  display: none;
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 800;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
   width: 28px;
 }
 
+.scoreStepperCompact {
+  font-size: 13px;
+  height: 28px;
+  width: 22px;
+}
+
+.scoreStepper:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent),
+    0 2px 0 rgba(15, 23, 42, 0.03);
+}
+
+.scoreStepper:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.scoreStepper:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.scoreStepperIncrease {
+  display: inline-flex;
+}
+
+.scoreBox {
+  align-items: center;
+  background: linear-gradient(180deg, #fff8f3 0%, #f9e7df 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 1px 0 rgba(224, 36, 36, 0.1);
+  color: var(--text);
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 10px;
+}
+
+.scoreBoxCompact {
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 6px;
+}
+
+.scoreInput {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  height: 22px;
+  outline: none;
+  text-align: center;
+  transition: color 100ms ease;
+  width: 18px;
+  caret-color: currentColor;
+}
+
+.scoreInputCompact {
+  font-size: 13px;
+  height: 16px;
+  width: 10px;
+}
+
 .scoreInput:focus {
-  border-color: var(--accent);
+  color: var(--accent);
+  outline: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline-offset: 1px;
 }
 
 .scoreInput:disabled {
-  background: var(--bg-alt);
-  color: var(--text-light);
+  background: transparent;
+  color: inherit;
+  opacity: 1;
+}
+
+.scoreInput::placeholder {
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 
 .scoreColon {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 0 2px;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 0;
+}
+
+.scoreColonCompact {
+  font-size: 13px;
 }
 
 /* Original result badge — hidden on mobile, shown on wider screens */
@@ -1096,10 +1702,19 @@
   display: none;
 }
 
+.matchOriginalVisible {
+  visibility: visible;
+}
+
+.matchOriginalHidden {
+  visibility: hidden;
+}
+
 .matchStatus {
-  font-size: 10px;
-  width: 16px;
+  font-size: 11px;
+  width: 28px;
   text-align: center;
+  justify-self: center;
 }
 
 .matchStateReady {
@@ -1116,29 +1731,58 @@
   font-weight: 500;
 }
 
-.matchReset {
+.matchStatusAction {
+  align-items: center;
   background: none;
   border: none;
-  color: var(--text-light);
+  color: inherit;
   cursor: pointer;
-  font-size: 13px;
-  padding: 3px;
-  text-align: center;
-  /* generous tap target */
-  min-width: 24px;
-  min-height: 24px;
+  min-width: 28px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  position: relative;
 }
 
-.matchReset:hover:not(:disabled) {
+.matchStatusPrimaryIcon,
+.matchStatusResetIcon {
+  align-items: center;
+  display: inline-flex;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  transition:
+    opacity 120ms ease,
+    color 120ms ease;
+}
+
+.matchStatusPrimaryIcon {
+  opacity: 1;
+}
+
+.matchStatusResetIcon {
   color: var(--accent);
+  opacity: 0;
 }
 
-.matchReset:disabled {
-  cursor: default;
-  opacity: 0.3;
+.matchStatusActionArmed .matchStatusPrimaryIcon {
+  opacity: 0;
+}
+
+.matchStatusActionArmed .matchStatusResetIcon {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .matchStatusAction:hover .matchStatusPrimaryIcon {
+    opacity: 0;
+  }
+
+  .matchStatusAction:hover .matchStatusResetIcon {
+    opacity: 1;
+  }
 }
 
 /* ── Empty state ── */
@@ -1209,7 +1853,7 @@
   }
 
   .matchRow {
-    grid-template-columns: 54px 1fr auto 1fr 46px auto auto;
+    grid-template-columns: 54px 1fr auto 1fr 46px 24px;
     padding: 5px 12px;
     min-height: 40px;
   }
@@ -1228,39 +1872,37 @@
     font-size: 11px;
   }
 
-  .matchReset {
-    min-width: 28px;
-    min-height: 28px;
-    padding: 4px;
-  }
-
   .matchOriginal {
     display: block;
     flex: 0 0 46px;
   }
 
   .scoreInput {
-    width: 34px;
-    height: 30px;
+    width: 15px;
+    height: 18px;
     font-size: 14px;
   }
 
   .matchdayTab {
     min-width: 115px;
-    padding: 8px 12px;
+    padding: 9px 12px 8px;
   }
 
   .matchdayTab span {
-    font-size: 11px;
+    font-size: 15px;
   }
 
   .matchdayTab strong {
-    font-size: 13px;
+    font-size: 10px;
   }
 }
 
 /* ── Desktop (≥ 900px) ── */
 @media (min-width: 900px) {
+  .pageWithMobileDock {
+    padding-bottom: 0;
+  }
+
   .mobileOnly {
     display: none;
   }
@@ -1284,6 +1926,19 @@
     border: none;
   }
 
+  .mobileTableDock {
+    display: none;
+  }
+
+  .stackedMobileWorkspace {
+    gap: 16px;
+  }
+
+  .stackedMobileHeadingRow {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .panel {
     border: 1px solid var(--border);
     border-radius: 2px;
@@ -1295,9 +1950,20 @@
     gap: 16px;
   }
 
+  .scoreInputGroup {
+    gap: 0;
+  }
+
+  .scoreStepper {
+    display: inline-flex;
+    height: 40px;
+    width: 32px;
+  }
+
   .tablePanel {
     border: 1px solid var(--border);
     border-radius: 2px;
+    display: block;
   }
 
   .matchesPanel {
@@ -1395,8 +2061,8 @@
   }
 
   .matchdayNavButton {
-    min-height: 36px;
-    padding: 0 14px;
+    min-height: 38px;
+    padding: 0 16px;
   }
 
   .matchdayHeader {
@@ -1424,14 +2090,14 @@
   }
 
   .matchRow {
-    grid-template-columns: 60px 1fr auto 1fr 50px auto auto;
-    padding: 6px 14px;
-    min-height: 42px;
+    grid-template-columns: 60px 1fr auto 1fr 50px 24px;
+    padding: 8px 14px;
+    min-height: 54px;
   }
 
   .matchDateSplit {
-    font-size: 12px;
-    min-height: 30px;
+    font-size: 11px;
+    min-height: 28px;
     padding: 0 14px;
   }
 
@@ -1457,7 +2123,7 @@
   }
 
   .matchStatus {
-    width: 70px;
+    width: 24px;
   }
 
   .panelText {
@@ -1475,6 +2141,13 @@
   .selectGroup span,
   .selectGroupWide span {
     font-size: 10px;
+    top: 8px;
+  }
+
+  .selectGroup select,
+  .selectGroupWide select {
+    min-height: 50px;
+    padding: 19px 36px 8px 12px;
   }
 
   .filterGrid {
@@ -1486,8 +2159,74 @@
     font-size: 12px;
   }
 
+  .searchImportActions {
+    gap: 14px;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 10px 12px;
+  }
+
+  .searchImportSummary {
+    font-size: 13px;
+    max-width: 46ch;
+  }
+
+  .searchImportStatus {
+    margin-left: auto;
+    width: auto;
+  }
+
+  .searchImportButton {
+    margin-left: auto;
+    min-width: 240px;
+  }
+
+  .tableResetButton {
+    min-height: 40px;
+    padding-inline: 18px;
+  }
+
+  .scoreInputGroup {
+    gap: 8px;
+  }
+
+  .scoreStepper {
+    font-size: 18px;
+    height: 34px;
+    width: 30px;
+  }
+
+  .scoreBox {
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 12px;
+  }
+
+  .scoreInput {
+    font-size: 17px;
+    height: 24px;
+    width: 19px;
+  }
+
+  .scoreColon {
+    font-size: 17px;
+  }
+
   .mobileFilterDialog {
     display: none;
+  }
+
+  .fullTableDialog[open] {
+    place-items: center;
+  }
+
+  .fullTableDialogCard {
+    border-radius: 14px;
+    max-height: calc(100dvh - 20px);
+  }
+
+  .fullTableDialogCard .tableWrap {
+    max-height: calc(100dvh - 140px);
   }
 }
 
@@ -1499,14 +2238,98 @@
 
   .matchdayTab {
     min-width: 132px;
-    padding: 10px 14px;
+    padding: 11px 14px 10px;
   }
 
   .matchdayTab span {
-    font-size: 11px;
+    font-size: 16px;
   }
 
   .matchdayTab strong {
+    font-size: 11px;
+  }
+}
+
+.page {
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+.intro {
+  border: 1px solid var(--border);
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 6px;
+}
+
+.scoreInputGroup {
+  gap: 0;
+}
+
+.matchHome,
+.matchGuest {
+  min-width: 0;
+}
+
+.matchStatus {
+  justify-self: center;
+}
+
+@media (min-width: 640px) and (max-width: 899px) {
+  .matchRow {
+    grid-template-columns: 54px minmax(0, 1fr) auto minmax(0, 1fr) 40px 24px;
+  }
+
+  .matchOriginal {
+    min-width: 40px;
+  }
+
+  .scoreInput {
+    height: 18px;
     font-size: 14px;
+    width: 14px;
+  }
+
+  .scoreStepper {
+    height: 30px;
+    width: 24px;
+  }
+}
+
+@media (min-width: 900px) {
+  .intro {
+    padding: 20px 20px 18px;
+  }
+
+  .workspace {
+    gap: 18px;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  .matchRow {
+    grid-template-columns: 58px minmax(0, 1.1fr) auto minmax(0, 1.1fr) 42px 24px;
+  }
+
+  .matchOriginal {
+    min-width: 42px;
+  }
+
+  .matchStatus {
+    width: 24px;
+  }
+
+  .scoreStepper {
+    font-size: 18px;
+    height: 34px;
+    width: 30px;
+  }
+
+  .scoreInput {
+    font-size: 17px;
+    height: 24px;
+    width: 19px;
+  }
+
+  .scoreBox {
+    min-height: 46px;
   }
 }

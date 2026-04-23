@@ -146,4 +146,26 @@ describe("loadCompetitionFromUrl", () => {
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it("retries a transient landing-page failure before succeeding", async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response("temporarily unavailable", { status: 503 }))
+      .mockResolvedValueOnce(new Response(duplicateByeHtml, { status: 200 }));
+
+    const competition = await loadCompetitionFromUrl(
+      "https://www.fussball.de/spieltag/test/staffel/TESTCOMP#!/",
+    );
+
+    expect(competition.id).toBe("TESTCOMP");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails clearly when required numeric table cells are no longer readable", async () => {
+    const malformedTableHtml = duplicateByeHtml.replace("<td>0:0</td>", "<td>-</td>");
+    fetchMock.mockImplementation(async () => new Response(malformedTableHtml, { status: 200 }));
+
+    await expect(
+      loadCompetitionFromUrl("https://www.fussball.de/spieltag/test/staffel/TESTCOMP#!/"),
+    ).rejects.toThrow("Tabellenzeile für 'Team A': Tore konnte nicht gelesen werden.");
+  });
 });

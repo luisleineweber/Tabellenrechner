@@ -2,7 +2,11 @@
 
 import { Fragment } from "react";
 import Image from "next/image";
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  ReactNode,
+} from "react";
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 import styles from "./page.module.css";
 import type {
@@ -14,11 +18,14 @@ import type {
   SearchFilters,
 } from "@/lib/fussballde/types";
 import {
-  countActiveEdits,
+  countCommittedEdits,
+  countPendingEdits,
   getEffectiveResult,
   getTableDelta,
+  hasCommittedEdit,
   hasTableAdjustments,
   hasPendingEdit,
+  normalizeInputToNullableNumber,
   recalculateTable,
 } from "@/lib/table-calculator";
 import {
@@ -110,12 +117,23 @@ type TeamMatchGroup = {
   matches: Competition["matchdays"][number]["matches"];
 };
 
-export default function Home() {
+type LayoutVariant = "default" | "stacked-mobile";
+
+type TabellenrechnerPageProps = {
+  layoutVariant?: LayoutVariant;
+};
+
+export function TabellenrechnerPage({
+  layoutVariant = "default",
+}: TabellenrechnerPageProps) {
+  const isStackedMobileLayout = layoutVariant === "stacked-mobile";
   const matchdayRailRef = useRef<HTMLDivElement | null>(null);
   const matchdayTabRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const matchdayRailDragRef = useRef<MatchdayRailDragState | null>(null);
   const suppressMatchdayRailClickUntilRef = useRef(0);
+  const resetStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterDialogRef = useRef<HTMLDialogElement | null>(null);
+  const fullTableDialogRef = useRef<HTMLDialogElement | null>(null);
   const [bootstrap, setBootstrap] = useState<SearchBootstrap | null>(null);
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
   const [competitions, setCompetitions] = useState<CompetitionOption[]>([]);
@@ -128,6 +146,7 @@ export default function Home() {
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [activeMatchdayNumber, setActiveMatchdayNumber] = useState<number | null>(null);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
+  const [armedResetMatchId, setArmedResetMatchId] = useState<string | null>(null);
   const [editedResults, setEditedResults] = useState<EditableResultMap>({});
   const [searchError, setSearchError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -215,12 +234,21 @@ export default function Home() {
 
       filterDialogRef.current?.close();
       setIsFilterDialogOpen(false);
+      fullTableDialogRef.current?.close();
     };
 
     mediaQuery.addEventListener("change", handleViewportChange);
 
     return () => {
       mediaQuery.removeEventListener("change", handleViewportChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (resetStatusTimeoutRef.current !== null) {
+        window.clearTimeout(resetStatusTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -365,26 +393,102 @@ export default function Home() {
     setIsFilterDialogOpen(false);
   }
 
+  function openFullTableDialog() {
+    const dialog = fullTableDialogRef.current;
+
+    if (!dialog || dialog.open) {
+      return;
+    }
+
+    dialog.showModal();
+  }
+
+  function closeFullTableDialog() {
+    fullTableDialogRef.current?.close();
+  }
+
   function updateFilters(patch: Partial<SearchFilters>) {
     void loadBootstrap({ ...filters, ...patch });
   }
 
-  function updateMatchResult(matchId: string, side: "home" | "guest", value: string) {
+  function normalizeStoredMatchEdit(
+    match: Competition["matchdays"][number]["matches"][number],
+    nextEdit: EditableResultMap[string],
+  ) {
+    if (!nextEdit.home && !nextEdit.guest) {
+      return null;
+    }
+
+    const normalizedHome = normalizeInputToNullableNumber(nextEdit.home);
+    const normalizedGuest = normalizeInputToNullableNumber(nextEdit.guest);
+    const isComplete = normalizedHome !== null && normalizedGuest !== null;
+    const matchesOriginal =
+      isComplete &&
+      normalizedHome === match.originalResult.home &&
+      normalizedGuest === match.originalResult.guest;
+
+    return matchesOriginal ? null : nextEdit;
+  }
+
+  function updateMatchResult(
+    match: Competition["matchdays"][number]["matches"][number],
+    side: "home" | "guest",
+    value: string,
+  ) {
     const sanitized = value.replace(/[^\d]/g, "").slice(0, 2);
 
     startTransition(() => {
       setEditedResults((current) => {
-        const existing = current[matchId] ?? { home: "", guest: "" };
+        const existing = current[match.id] ?? {
+          home: match.originalResult.home !== null ? String(match.originalResult.home) : "",
+          guest: match.originalResult.guest !== null ? String(match.originalResult.guest) : "",
+        };
+        const nextEntry = normalizeStoredMatchEdit(match, {
+          ...existing,
+          [side]: sanitized,
+        });
         const next = {
           ...current,
-          [matchId]: {
-            ...existing,
-            [side]: sanitized,
-          },
         };
 
-        if (!next[matchId].home && !next[matchId].guest) {
-          delete next[matchId];
+        if (nextEntry) {
+          next[match.id] = nextEntry;
+        } else {
+          delete next[match.id];
+        }
+
+        return next;
+      });
+    });
+  }
+
+  function adjustMatchResult(
+    match: Competition["matchdays"][number]["matches"][number],
+    side: "home" | "guest",
+    delta: number,
+  ) {
+    if (match.isBye) {
+      return;
+    }
+
+    startTransition(() => {
+      setEditedResults((current) => {
+        const existing = current[match.id] ?? { home: "", guest: "" };
+        const homeBase = normalizeInputToNullableNumber(existing.home) ?? match.originalResult.home ?? 0;
+        const guestBase =
+          normalizeInputToNullableNumber(existing.guest) ?? match.originalResult.guest ?? 0;
+        const nextEntry = normalizeStoredMatchEdit(match, {
+          home: String(clamp(homeBase + (side === "home" ? delta : 0), 0, 99)),
+          guest: String(clamp(guestBase + (side === "guest" ? delta : 0), 0, 99)),
+        });
+        const next = {
+          ...current,
+        };
+
+        if (nextEntry) {
+          next[match.id] = nextEntry;
+        } else {
+          delete next[match.id];
         }
 
         return next;
@@ -393,6 +497,12 @@ export default function Home() {
   }
 
   function resetMatchResult(matchId: string) {
+    if (resetStatusTimeoutRef.current !== null) {
+      window.clearTimeout(resetStatusTimeoutRef.current);
+      resetStatusTimeoutRef.current = null;
+    }
+    setArmedResetMatchId((current) => (current === matchId ? null : current));
+
     startTransition(() => {
       setEditedResults((current) => {
         const next = { ...current };
@@ -400,6 +510,43 @@ export default function Home() {
         return next;
       });
     });
+  }
+
+  function armMatchReset(matchId: string) {
+    if (resetStatusTimeoutRef.current !== null) {
+      window.clearTimeout(resetStatusTimeoutRef.current);
+    }
+
+    setArmedResetMatchId(matchId);
+    resetStatusTimeoutRef.current = setTimeout(() => {
+      setArmedResetMatchId((current) => (current === matchId ? null : current));
+      resetStatusTimeoutRef.current = null;
+    }, 1200);
+  }
+
+  function handleMatchStatusAction(
+    match: Competition["matchdays"][number]["matches"][number],
+    hasStoredEdit: boolean,
+  ) {
+    if (!hasStoredEdit) {
+      return;
+    }
+
+    if (window.matchMedia("(min-width: 900px)").matches) {
+      resetMatchResult(match.id);
+      return;
+    }
+
+    if (armedResetMatchId === match.id) {
+      resetMatchResult(match.id);
+      return;
+    }
+
+    armMatchReset(match.id);
+  }
+
+  function toggleTeamFocus(teamId: string) {
+    setActiveTeamId((current) => (current === teamId ? null : teamId));
   }
 
   function handleMatchdayRailWheel(event: React.WheelEvent<HTMLDivElement>) {
@@ -436,8 +583,6 @@ export default function Home() {
       startScrollLeft: rail.scrollLeft,
       hasDragged: false,
     };
-    rail.setPointerCapture(event.pointerId);
-    setIsMatchdayRailDragging(true);
   }
 
   function handleMatchdayRailPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -452,11 +597,14 @@ export default function Home() {
 
     if (!dragState.hasDragged && Math.abs(deltaX) > 6) {
       dragState.hasDragged = true;
+      if (!rail.hasPointerCapture(event.pointerId)) {
+        rail.setPointerCapture(event.pointerId);
+      }
+      setIsMatchdayRailDragging(true);
     }
 
-    rail.scrollLeft = dragState.startScrollLeft - deltaX;
-
     if (dragState.hasDragged) {
+      rail.scrollLeft = dragState.startScrollLeft - deltaX;
       event.preventDefault();
     }
   }
@@ -503,7 +651,8 @@ export default function Home() {
   }
 
   const computedTable = competition ? recalculateTable(competition, editedResults) : [];
-  const activeEdits = countActiveEdits(editedResults);
+  const activeEdits = competition ? countCommittedEdits(competition, editedResults) : 0;
+  const pendingEdits = competition ? countPendingEdits(competition, editedResults) : 0;
   const matchdays = competition?.matchdays ?? [];
   const importedMatchCount = competition
     ? competition.matchdays.reduce((sum, matchday) => sum + matchday.matches.length, 0)
@@ -532,6 +681,7 @@ export default function Home() {
       competition?.importedTable.find((row) => row.teamId === activeTeamId) ??
       null
     : null;
+
   function getTeamMatchdayLabel(
     matches: Competition["matchdays"][number]["matches"],
     fallbackMatches: Competition["matchdays"][number]["matches"],
@@ -595,6 +745,351 @@ export default function Home() {
       : "Noch kein Wettbewerb ausgewählt";
   const shouldCollapseMobileSearch = competition !== null;
 
+  function renderTable() {
+    if (!competition) {
+      return null;
+    }
+
+    return (
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Pl.</th>
+              <th>Vereine</th>
+              <th className={`${styles.tableStatHeader} ${styles.mobileOptionalStat}`}>Sp.</th>
+              <th className={styles.colHideable} title="Siege">
+                S
+              </th>
+              <th className={styles.colHideable} title="Unentschieden">
+                U
+              </th>
+              <th className={styles.colHideable} title="Niederlagen">
+                N
+              </th>
+              <th className={styles.tableStatHeader}>Tore</th>
+              <th className={styles.tableStatHeader}>+/-</th>
+              <th className={styles.tableStatHeader}>Pkt.</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {computedTable.map((row) => {
+              const delta = getTableDelta(row, competition.importedTable);
+              const isTeamActive = row.teamId === activeTeamId;
+              const trendLabel =
+                delta.positionDelta > 0
+                  ? `↑${delta.positionDelta}`
+                  : delta.positionDelta < 0
+                    ? `↓${Math.abs(delta.positionDelta)}`
+                    : "—";
+
+              return (
+                <tr
+                  key={row.teamId}
+                  className={[
+                    styles.tableRow,
+                    isTeamActive ? styles.tableRowActive : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <td
+                    className={[
+                      styles.rankCell,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {row.rank}.
+                  </td>
+                  <td className={styles.teamCell}>
+                    <button
+                      className={`${styles.teamFocusButton} ${isTeamActive ? styles.teamFocusButtonActive : ""}`}
+                      onClick={() => toggleTeamFocus(row.teamId)}
+                      type="button"
+                      aria-pressed={isTeamActive}
+                      title={
+                        isTeamActive
+                          ? `${row.teamName} ausblenden`
+                          : `Alle Spiele von ${row.teamName} anzeigen`
+                      }
+                    >
+                      <div className={styles.teamCellContent}>
+                        {row.teamLogoUrl ? (
+                          <Image
+                            className={styles.teamLogo}
+                            src={row.teamLogoUrl}
+                            alt=""
+                            width={20}
+                            height={20}
+                            sizes="20px"
+                            unoptimized
+                          />
+                        ) : null}
+                        <span className={styles.teamNameText}>{row.teamName}</span>
+                      </div>
+                    </button>
+                  </td>
+                  <td className={`${styles.tableStatCell} ${styles.mobileOptionalStat}`}>{row.games}</td>
+                  <td className={styles.colHideable}>{row.wins}</td>
+                  <td className={styles.colHideable}>{row.draws}</td>
+                  <td className={styles.colHideable}>{row.losses}</td>
+                  <td className={styles.tableStatCell}>
+                    {row.goalsFor}:{row.goalsAgainst}
+                  </td>
+                  <td className={styles.tableStatCell}>{signedDelta(row.goalDifference)}</td>
+                  <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td>
+                  <td>
+                    <span
+                      className={
+                        delta.positionDelta > 0
+                          ? styles.trendUp
+                          : delta.positionDelta < 0
+                            ? styles.trendDown
+                            : styles.trendFlat
+                      }
+                    >
+                      {trendLabel}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  function renderStackedMatchdaySections() {
+    if (!competition) {
+      return null;
+    }
+
+    return (
+      <div className={styles.matchdayList}>
+        {selectedTeam ? (
+          selectedTeamMatchGroups.map((group) => (
+            <section key={`${selectedTeam.teamId}-${group.matchdayNumber}`} className={styles.matchdayCard}>
+              <div className={`${styles.matchdayHeader} ${styles.matchdayHeaderCompact}`}>
+                <div className={styles.matchdayHeaderText}>
+                  <span className={styles.matchdayBadge}>{group.matchdayNumber}. Spieltag</span>
+                  {group.headerDateLabel ? (
+                    <span className={styles.matchdayLabel}>{group.headerDateLabel}</span>
+                  ) : null}
+                </div>
+              </div>
+              {renderMatchRows(group.matchdayNumber, group.matches, { showDateSplits: false })}
+            </section>
+          ))
+        ) : (
+          matchdays.map((matchday) => {
+            const matchdayHeaderLabel = getMatchdayHeaderLabel(matchday);
+
+            return (
+              <section key={matchday.number} className={styles.matchdayCard}>
+                <div className={styles.matchdayHeader}>
+                  <div className={styles.matchdayHeaderText}>
+                    <span className={styles.matchdayBadge}>{matchday.number}. Spieltag</span>
+                    {matchdayHeaderLabel ? (
+                      <span className={styles.matchdayLabel}>{matchdayHeaderLabel}</span>
+                    ) : null}
+                  </div>
+                  <span className={styles.matchdayMeta}>{matchday.matches.length} Partien</span>
+                </div>
+                {renderMatchRows(matchday.number, matchday.matches)}
+              </section>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Kept temporarily while the mobile table dock experiment is consolidated.
+  function renderMobileTableDock() {
+    if (!competition) {
+      return null;
+    }
+
+     return (
+       <aside className={styles.mobileTableDock} aria-label="Live-Tabelle">
+         <div className={styles.mobileTableDockHeader}>
+           <div className={styles.mobileTableDockHeaderCopy}>
+             <span className={styles.mobileTableDockEyebrow}>Live-Tabelle</span>
+           </div>
+           <div className={styles.mobileTableDockActions}>
+             {selectedTeam ? (
+               <button
+                 className={`${styles.secondaryButton} ${styles.mobileTableDockReset}`}
+                 onClick={() => setActiveTeamId(null)}
+                 type="button"
+               >
+                 Fokus lösen
+               </button>
+             ) : null}
+             <button
+               className={`${styles.secondaryButton} ${styles.mobileTableDockOpenButton}`}
+               onClick={openFullTableDialog}
+               type="button"
+             >
+               Volltabelle
+             </button>
+           </div>
+</div>
+<div className={styles.mobileTableDockRail}>
+{computedTable.map((row) => {
+             const delta = getTableDelta(row, competition.importedTable);
+             const isActive = row.teamId === activeTeamId;
+             const trendLabel =
+                delta.positionDelta > 0
+                  ? `↑${delta.positionDelta}`
+                  : delta.positionDelta < 0
+                    ? `↓${Math.abs(delta.positionDelta)}`
+                    : "·";
+
+return (
+              <button
+                key={row.teamId}
+                className={`${styles.mobileTableDockItem} ${
+                  isActive ? styles.mobileTableDockItemActive : ""
+                }`}
+                onClick={() => toggleTeamFocus(row.teamId)}
+                type="button"
+                aria-pressed={isActive}
+                title={
+                  isActive ? `${row.teamName} ausblenden` : `Alle Spiele von ${row.teamName} anzeigen`
+                }
+              >
+                <div className={styles.mobileTableDockTopline}>
+                  <span className={styles.mobileTableDockRank}>{row.rank}.</span>
+                  <span
+                    className={
+                      delta.positionDelta > 0
+                        ? styles.trendUp
+                        : delta.positionDelta < 0
+                          ? styles.trendDown
+                          : styles.trendFlat
+                    }
+                    aria-label={
+                      delta.positionDelta > 0
+                        ? `${row.teamName} gewinnt ${delta.positionDelta} Plätze`
+                        : delta.positionDelta < 0
+                          ? `${row.teamName} verliert ${Math.abs(delta.positionDelta)} Plätze`
+                          : `${row.teamName} unverändert`
+                    }
+                  >
+                    {trendLabel}
+                  </span>
+                  <span className={styles.mobileTableDockPoints}>{row.points} Pkt.</span>
+                </div>
+                <div className={styles.mobileTableDockTeam}>
+                  {row.teamLogoUrl ? (
+                    <Image
+                      className={styles.mobileTableDockLogo}
+                      src={row.teamLogoUrl}
+                      alt=""
+                      width={18}
+                      height={18}
+                      sizes="18px"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className={styles.mobileTableDockLogoPlaceholder} aria-hidden="true" />
+                  )}
+                  <span className={styles.mobileTableDockName}>{row.teamName}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    );
+  }
+
+  function renderStackedTableRail() {
+    if (!competition) {
+      return null;
+    }
+
+    return (
+      <aside className={styles.stackedMobileRailColumn} aria-label="Live-Tabelle">
+        <div className={styles.stackedMobileRail}>
+          <div className={styles.stackedMobileRailHeader}>
+            <button
+              className={styles.iconActionButton}
+              onClick={openFullTableDialog}
+              type="button"
+              aria-label="Volltabelle öffnen"
+              title="Volltabelle"
+            >
+              T
+            </button>
+          </div>
+          <div className={styles.stackedMobileRailList}>
+            {computedTable.map((row) => {
+              const delta = getTableDelta(row, competition.importedTable);
+              const isActive = row.teamId === activeTeamId;
+              const trendLabel =
+                delta.positionDelta > 0
+                  ? `↑${delta.positionDelta}`
+                  : delta.positionDelta < 0
+                    ? `↓${Math.abs(delta.positionDelta)}`
+                    : "·";
+
+              return (
+                <button
+                  key={row.teamId}
+                  className={styles.stackedMobileRailItem}
+                  onClick={() => toggleTeamFocus(row.teamId)}
+                  type="button"
+                  aria-pressed={isActive}
+                  title={
+                    isActive ? `${row.teamName} ausblenden` : `Alle Spiele von ${row.teamName} anzeigen`
+                  }
+                >
+                  <span className={styles.stackedMobileRailRank}>{row.rank}</span>
+                  <span
+                    className={
+                      delta.positionDelta > 0
+                        ? styles.stackedMobileRailTrendUp
+                        : delta.positionDelta < 0
+                          ? styles.stackedMobileRailTrendDown
+                          : styles.stackedMobileRailTrendFlat
+                    }
+                    aria-label={
+                      delta.positionDelta > 0
+                        ? `${row.teamName} gewinnt ${delta.positionDelta} Plätze`
+                        : delta.positionDelta < 0
+                          ? `${row.teamName} verliert ${Math.abs(delta.positionDelta)} Plätze`
+                          : `${row.teamName} unverändert`
+                    }
+                  >
+                    {trendLabel}
+                  </span>
+                  {row.teamLogoUrl ? (
+                    <Image
+                      className={styles.stackedMobileRailLogo}
+                      src={row.teamLogoUrl}
+                      alt=""
+                      width={18}
+                      height={18}
+                      sizes="18px"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className={styles.stackedMobileRailLogoPlaceholder} aria-hidden="true" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   function renderMatchRows(
     matchdayNumber: number,
     matches: Competition["matchdays"][number]["matches"],
@@ -608,6 +1103,9 @@ export default function Home() {
         {matches.map((match) => {
           const effectiveResult = getEffectiveResult(match, editedResults);
           const pending = hasPendingEdit(match, editedResults);
+          const committedEdit = hasCommittedEdit(match, editedResults);
+          const hasStoredEdit = Boolean(editedResults[match.id]);
+          const isResetArmed = armedResetMatchId === match.id;
           const originalResult =
             match.originalResult.home !== null && match.originalResult.guest !== null
               ? `${match.originalResult.home}:${match.originalResult.guest}`
@@ -634,63 +1132,136 @@ export default function Home() {
                 </div>
               ) : null}
 
-              <div className={styles.matchRow}>
+              <div
+                className={styles.matchRow}
+              >
                 <span className={styles.matchKickoff}>{getKickoffTimeLabel(match.kickoffText)}</span>
 
-                <span className={styles.matchHome}>{match.homeTeamName}</span>
-
-                <div className={styles.scoreInputGroup}>
-                  <input
-                    className={styles.scoreInput}
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                    value={editedResults[match.id]?.home ?? ""}
-                    onChange={(event) => updateMatchResult(match.id, "home", event.target.value)}
-                    placeholder={match.originalResult.home !== null ? String(match.originalResult.home) : "-"}
-                    disabled={match.isBye}
-                  />
-                  <span className={styles.scoreColon}>:</span>
-                  <input
-                    className={styles.scoreInput}
-                    type="text"
-                    inputMode="numeric"
-                    aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                    value={editedResults[match.id]?.guest ?? ""}
-                    onChange={(event) => updateMatchResult(match.id, "guest", event.target.value)}
-                    placeholder={match.originalResult.guest !== null ? String(match.originalResult.guest) : "-"}
-                    disabled={match.isBye}
-                  />
-                </div>
-
-                <span className={styles.matchGuest}>{match.guestTeamName}</span>
-
-                <span className={styles.matchOriginal}>{originalResult}</span>
-
-                <span className={styles.matchStatus}>
-                  <span
-                    className={
-                      pending
-                        ? styles.matchStatePending
-                        : effectiveResult.home === null || effectiveResult.guest === null
-                          ? styles.matchStateOpen
-                          : styles.matchStateReady
-                    }
-                  >
-                    {pending ? "···" : effectiveResult.home === null || effectiveResult.guest === null ? "" : "✓"}
-                  </span>
+                <span className={styles.matchHome} title={match.homeTeamName}>
+                  {match.homeTeamName}
                 </span>
 
-                <button
-                  className={styles.matchReset}
-                  onClick={() => resetMatchResult(match.id)}
-                  disabled={!editedResults[match.id]}
-                  type="button"
-                  aria-label={getMatchResetLabel(match.homeTeamName, match.guestTeamName)}
-                  title="Tipp zurücksetzen"
+                <div
+                  className={styles.scoreInputGroup}
                 >
-                  ✕
-                </button>
+                  <button
+                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
+                    onClick={() => adjustMatchResult(match, "home", 1)}
+                    disabled={match.isBye}
+                    type="button"
+                    aria-label={`Heimtore von ${match.homeTeamName} gegen ${match.guestTeamName} um 1 erhöhen`}
+                    title="Heimtore erhöhen"
+                  >
+                    +
+                  </button>
+<div
+                     className={styles.scoreBox}
+                   >
+                     <input
+                       className={styles.scoreInput}
+                       type="text"
+                       inputMode="numeric"
+                       aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                       value={
+                         editedResults[match.id]?.home ??
+                         (match.originalResult.home !== null ? String(match.originalResult.home) : "")
+                       }
+                       onChange={(event) => updateMatchResult(match, "home", event.target.value)}
+                       placeholder="-"
+                       disabled={match.isBye}
+                     />
+                     <span
+                       className={styles.scoreColon}
+                     >
+                       :
+                     </span>
+                     <input
+                       className={styles.scoreInput}
+                       type="text"
+                       inputMode="numeric"
+                       aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                       value={
+                         editedResults[match.id]?.guest ??
+                         (match.originalResult.guest !== null ? String(match.originalResult.guest) : "")
+                       }
+                       onChange={(event) => updateMatchResult(match, "guest", event.target.value)}
+                       placeholder="-"
+                       disabled={match.isBye}
+                     />
+                   </div>
+                  <button
+                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
+                    onClick={() => adjustMatchResult(match, "guest", 1)}
+                    disabled={match.isBye}
+                    type="button"
+                    aria-label={`Gasttore von ${match.guestTeamName} bei ${match.homeTeamName} um 1 erhöhen`}
+                    title="Gasttore erhöhen"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <span className={styles.matchGuest} title={match.guestTeamName}>
+                  {match.guestTeamName}
+                </span>
+
+                <span
+                  className={`${styles.matchOriginal} ${
+                    committedEdit ? styles.matchOriginalVisible : styles.matchOriginalHidden
+                  }`}
+                  title={committedEdit ? `Original importiertes Ergebnis: ${originalResult}` : undefined}
+                >
+                  {committedEdit ? originalResult : ""}
+                </span>
+
+                <span className={styles.matchStatus}>
+                  {hasStoredEdit ? (
+                    <button
+                      className={`${styles.matchStatusAction} ${
+                        pending
+                          ? styles.matchStatePending
+                          : effectiveResult.home === null || effectiveResult.guest === null
+                            ? styles.matchStateOpen
+                            : styles.matchStateReady
+                      } ${isResetArmed ? styles.matchStatusActionArmed : ""}`}
+                      onClick={() => handleMatchStatusAction(match, hasStoredEdit)}
+                      type="button"
+                      aria-label={
+                        isResetArmed
+                          ? `${getMatchResetLabel(match.homeTeamName, match.guestTeamName)}. Erneut tippen zum Bestätigen.`
+                          : getMatchResetLabel(match.homeTeamName, match.guestTeamName)
+                      }
+                      title={isResetArmed ? "Erneut tippen zum Zurücksetzen" : "Tippstatus"}
+                    >
+                      <span className={styles.matchStatusPrimaryIcon} aria-hidden="true">
+                        {pending
+                          ? "···"
+                          : effectiveResult.home === null || effectiveResult.guest === null
+                            ? ""
+                            : "✓"}
+                      </span>
+                      <span className={styles.matchStatusResetIcon} aria-hidden="true">
+                        ✕
+                      </span>
+                    </button>
+                  ) : (
+                    <span
+                      className={
+                        pending
+                          ? styles.matchStatePending
+                          : effectiveResult.home === null || effectiveResult.guest === null
+                            ? styles.matchStateOpen
+                            : styles.matchStateReady
+                      }
+                    >
+                      {pending
+                        ? "···"
+                        : effectiveResult.home === null || effectiveResult.guest === null
+                          ? ""
+                          : "✓"}
+                    </span>
+                  )}
+                </span>
               </div>
             </Fragment>
           );
@@ -789,8 +1360,17 @@ export default function Home() {
   }
 
   function renderSearchImportAction() {
+    const searchImportSummary = isLoadingCompetitionList
+      ? "Wettbewerbe werden geladen..."
+      : selectedCompetitionLabel
+        ? `${selectedCompetitionLabel} wird direkt in Tabelle und Spieltage importiert.`
+        : competitions.length
+          ? `${competitions.length} Wettbewerbe gefunden. Jetzt eine Auswahl importieren.`
+          : "Wähle erst Filter und Wettbewerb aus.";
+
     return (
-      <div className={styles.inlineActions}>
+      <div className={`${styles.inlineActions} ${styles.searchImportActions}`}>
+        <p className={styles.searchImportSummary}>{searchImportSummary}</p>
         <button
           className={`${styles.primaryButton} ${styles.searchImportButton}`}
           onClick={() => void importCompetition(selectedCompetitionUrl, "search")}
@@ -799,7 +1379,11 @@ export default function Home() {
         >
           Auswahl importieren
         </button>
-        {isBootstrapping ? <span className={styles.statusNote}>Filter aktualisieren...</span> : null}
+        {isBootstrapping ? (
+          <span className={`${styles.statusNote} ${styles.searchImportStatus}`}>
+            Filter aktualisieren...
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -910,7 +1494,281 @@ export default function Home() {
     );
   }
 
-  return (
+  function renderCompetitionInfoBar() {
+    if (!competition) {
+      return null;
+    }
+
+    return (
+      <div className={styles.infoBar}>
+        <div className={styles.infoBarBlock}>
+          <strong className={styles.infoBarValue}>{competition.name}</strong>
+          <span className={styles.infoBarMeta}>{competitionMeta}</span>
+          <a
+            className={styles.competitionSourceLink}
+            href={competition.sourceCompetitionUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`${competition.name} bei fussball.de öffnen`}
+            title="Wettbewerb bei fussball.de öffnen"
+          >
+            <Image
+              className={styles.competitionSourceLogo}
+              src="/fussball-de.svg"
+              alt="fussball.de"
+              width={719}
+              height={62}
+              priority={false}
+            />
+            <span aria-hidden="true" className={`${styles.competitionSourceLinkArrow} ${styles.mobileOnly}`}>
+              ↗
+            </span>
+          </a>
+        </div>
+        <div className={styles.infoBarBlock}>
+          <span className={styles.infoBarMeta}>{competitionStats}</span>
+          <span className={styles.infoBarMeta}>
+            <strong className={styles.infoBarAccent}>{activeEdits} Änderungen</strong>
+            {pendingEdits ? `, ${pendingEdits} offen` : ""}, {resolvedMatchCount} Spiele gewertet
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  function renderTablePanel() {
+    return (
+      <div className={styles.tablePanel}>
+        <div className={styles.tablePanelHeader}>
+          <div className={styles.tablePanelHeading}>
+            <h2>Tabelle</h2>
+          </div>
+          <div className={styles.tablePanelActions}>
+            <button
+              className={`${styles.secondaryButton} ${styles.tableResetButton}`}
+              onClick={() => setEditedResults({})}
+              disabled={!activeEdits && !pendingEdits}
+              type="button"
+            >
+              Zurücksetzen
+            </button>
+          </div>
+          {showAdjustmentNotice ? (
+            <p className={styles.adjustmentNotice}>Offizielle Tabellenkorrekturen sind berücksichtigt.</p>
+          ) : null}
+        </div>
+        {renderTable()}
+      </div>
+    );
+  }
+
+  function renderSelectedTeamMatchdays() {
+    if (!selectedTeam) {
+      return null;
+    }
+
+    return selectedTeamMatchGroups.map((group) => (
+      <section key={`${selectedTeam.teamId}-${group.matchdayNumber}`} className={styles.matchdayCard}>
+        <div className={`${styles.matchdayHeader} ${styles.matchdayHeaderCompact}`}>
+          <div className={styles.matchdayHeaderText}>
+            <span className={styles.matchdayBadge}>{group.matchdayNumber}. Spieltag</span>
+            {group.headerDateLabel ? (
+              <span className={styles.matchdayLabel}>{group.headerDateLabel}</span>
+            ) : null}
+          </div>
+        </div>
+        {renderMatchRows(group.matchdayNumber, group.matches, { showDateSplits: false })}
+      </section>
+    ));
+  }
+
+  function renderDefaultMatchdaySections() {
+    if (!competition) {
+      return null;
+    }
+
+    if (selectedTeam) {
+      return renderSelectedTeamMatchdays();
+    }
+
+    return (
+      <>
+        <div className={styles.matchdayToolbar}>
+          <div className={styles.matchdayRailMeta}>
+            <span className={styles.matchdayRailMetaLabel}>Spieltage</span>
+            <span className={styles.matchdayRailMetaHint}>Links/rechts wischen oder tippen</span>
+          </div>
+          <div
+            ref={matchdayRailRef}
+            className={`${styles.matchdayRail} ${isMatchdayRailDragging ? styles.matchdayRailDragging : ""}`}
+            role="tablist"
+            aria-label="Spieltage"
+            onWheel={handleMatchdayRailWheel}
+            onPointerDown={handleMatchdayRailPointerDown}
+            onPointerMove={handleMatchdayRailPointerMove}
+            onPointerUp={handleMatchdayRailPointerUp}
+            onPointerCancel={handleMatchdayRailPointerCancel}
+            onLostPointerCapture={handleMatchdayRailLostPointerCapture}
+            onClickCapture={handleMatchdayRailClickCapture}
+          >
+            {matchdays.map((matchday) => {
+              const isActive = matchday.number === activeMatchday?.number;
+
+              return (
+                <button
+                  ref={(element) => {
+                    matchdayTabRefs.current[matchday.number] = element;
+                  }}
+                  key={matchday.number}
+                  id={`matchday-tab-${matchday.number}`}
+                  data-matchday-number={matchday.number}
+                  className={`${styles.matchdayTab} ${isActive ? styles.matchdayTabActive : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`matchday-panel-${matchday.number}`}
+                  onClick={() => setActiveMatchdayNumber(matchday.number)}
+                >
+                  <span>{matchday.number}. Spieltag</span>
+                  <strong>{matchday.matches.length} Partien</strong>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={styles.matchdayNav}>
+            <button
+              className={styles.matchdayNavButton}
+              onClick={() =>
+                normalizedActiveMatchdayIndex > 0 &&
+                setActiveMatchdayNumber(matchdays[normalizedActiveMatchdayIndex - 1].number)
+              }
+              disabled={normalizedActiveMatchdayIndex <= 0}
+              type="button"
+            >
+              Vorheriger
+            </button>
+            <span className={styles.matchdayCounter}>
+              {normalizedActiveMatchdayIndex + 1} / {matchdays.length}
+            </span>
+            <button
+              className={styles.matchdayNavButton}
+              onClick={() =>
+                normalizedActiveMatchdayIndex >= 0 &&
+                normalizedActiveMatchdayIndex < matchdays.length - 1 &&
+                setActiveMatchdayNumber(matchdays[normalizedActiveMatchdayIndex + 1].number)
+              }
+              disabled={normalizedActiveMatchdayIndex >= matchdays.length - 1}
+              type="button"
+            >
+              Nächster
+            </button>
+          </div>
+        </div>
+
+        {matchdays
+          .filter((matchday) => matchday.number === activeMatchday?.number)
+          .map((matchday) => {
+            const matchdayHeaderLabel = getMatchdayHeaderLabel(matchday);
+
+            return (
+              <section
+                key={matchday.number}
+                id={`matchday-panel-${matchday.number}`}
+                className={styles.matchdayCard}
+                role="tabpanel"
+                aria-labelledby={`matchday-tab-${matchday.number}`}
+              >
+                <div className={styles.matchdayHeader}>
+                  <div className={styles.matchdayHeaderText}>
+                    <span className={styles.matchdayBadge}>{matchday.number}. Spieltag</span>
+                    {matchdayHeaderLabel ? (
+                      <span className={styles.matchdayLabel}>{matchdayHeaderLabel}</span>
+                    ) : null}
+                  </div>
+                  <span className={styles.matchdayMeta}>{matchday.matches.length} Partien</span>
+                </div>
+                {renderMatchRows(matchday.number, matchday.matches)}
+              </section>
+            );
+          })}
+      </>
+    );
+  }
+
+  function renderMatchesPanel(children: ReactNode, compactHeader = false) {
+    return (
+      <div className={styles.matchesPanel}>
+        <div
+          className={`${styles.matchesPanelHeader} ${
+            compactHeader ? styles.stackedMobileMatchesPanelHeader : ""
+          }`}
+        >
+          <div className={styles.matchesPanelHeading}>
+            <h2>{selectedTeam ? `Spiele von ${selectedTeam.teamName}` : "Spielpaarungen"}</h2>
+            {selectedTeam ? (
+              <button className={styles.matchesModeReset} onClick={() => setActiveTeamId(null)} type="button">
+                Alle Spieltage
+              </button>
+            ) : null}
+          </div>
+          <p className={styles.matchesPanelHint}>
+            {selectedTeam
+              ? "Alle Partien dieses Vereins, Ergebnisse direkt bearbeitbar."
+              : compactHeader
+                ? "Alle Spieltage untereinander, Tabelle rechts als Schnellzugriff."
+                : "Spieltag wählen, horizontal wischen und Ergebnisse anpassen."}
+          </p>
+        </div>
+        <div className={styles.matchdayList}>{children}</div>
+      </div>
+    );
+  }
+
+  function renderDefaultCompetitionView() {
+    return (
+      <>
+        {renderCompetitionInfoBar()}
+        <section className={styles.workspace}>
+          {renderTablePanel()}
+          {renderMatchesPanel(renderDefaultMatchdaySections())}
+        </section>
+      </>
+    );
+  }
+
+  function renderStackedCompetitionView() {
+    return (
+      <>
+        {renderCompetitionInfoBar()}
+        <section className={styles.stackedMobileWorkspace}>
+          {renderMatchesPanel(renderStackedMatchdaySections(), true)}
+          {renderStackedTableRail()}
+        </section>
+      </>
+    );
+  }
+
+  function renderEmptyState() {
+    return (
+      <section className={styles.emptyState}>
+        <h2>Noch kein Wettbewerb geladen</h2>
+        <p>
+          Importiere eine URL oder wähle einen Wettbewerb über die Filter, um Tabelle und Spielpaarungen zu sehen.
+        </p>
+      </section>
+    );
+  }
+
+  function renderCompetitionView() {
+    if (!competition) {
+      return renderEmptyState();
+    }
+
+    return isStackedMobileLayout ? renderStackedCompetitionView() : renderDefaultCompetitionView();
+  }
+
+return (
     <main className={styles.page}>
       <section className={styles.intro} aria-labelledby="page-title">
         <p className={styles.introEyebrow}>Amateurfußball</p>
@@ -949,12 +1807,53 @@ export default function Home() {
             {searchError ? <p className={styles.error}>{searchError}</p> : null}
           </div>
           <div className={styles.filterDialogSection}>
-            <p className={styles.filterDialogDividerLabel}>Oder per URL laden</p>
-            {renderUrlImportControls("competition-url-mobile", true)}
+            <div className={styles.mobileInlineUrlCard}>
+              <div className={styles.mobileInlineUrlCopy}>
+                <p className={styles.filterDialogDividerLabel}>Oder per URL laden</p>
+                <p className={styles.mobileInlineUrlHint}>
+                  Direktimport für klassische fussball.de- und next.fussball.de-Links.
+                </p>
+              </div>
+              <button
+                className={styles.secondaryButton}
+                onClick={() => setIsMobileInlineUrlExpanded((current) => !current)}
+                type="button"
+              >
+                {isMobileInlineUrlExpanded ? "Einklappen" : "URL einfügen"}
+              </button>
+            </div>
+            {isMobileInlineUrlExpanded ? (
+              <div className={styles.mobileInlineUrlForm}>
+                {renderUrlImportControls("competition-url-mobile-inline")}
+              </div>
+            ) : null}
           </div>
         </div>
       </dialog>
-      {/* ── Import controls ── */}
+      <dialog
+        ref={fullTableDialogRef}
+        className={styles.fullTableDialog}
+        aria-labelledby="full-table-title"
+      >
+        <div className={styles.fullTableDialogCard}>
+          <div className={styles.panelHeader}>
+            <div>
+              <h2 id="full-table-title">Volltabelle</h2>
+            </div>
+            <button
+              className={`${styles.secondaryButton} ${styles.dialogCloseButton}`}
+              onClick={closeFullTableDialog}
+              type="button"
+            >
+              Schließen
+            </button>
+          </div>
+          <p className={styles.panelText}>
+            Die vollständige Tabelle mit allen Mannschaften und ihrem aktuellen Stand.
+          </p>
+          {renderTable()}
+        </div>
+      </dialog>
       <section className={styles.controlGrid}>
         <article className={styles.panel}>
           <div className={styles.panelHeader}>
@@ -965,322 +1864,9 @@ export default function Home() {
           {renderSearchPanelContent()}
         </article>
       </section>
-
-      {competition ? (
-        <>
-          {/* ── Compact info bar ── */}
-          <div className={styles.infoBar}>
-            <div className={styles.infoBarBlock}>
-              <strong className={styles.infoBarValue}>{competition.name}</strong>
-              <span className={styles.infoBarMeta}>{competitionMeta}</span>
-              <a
-                className={styles.competitionSourceLink}
-                href={competition.sourceCompetitionUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`${competition.name} bei fussball.de öffnen`}
-                title="Wettbewerb bei fussball.de öffnen"
-              >
-                <Image
-                  className={styles.competitionSourceLogo}
-                  src="/fussball-de.svg"
-                  alt="fussball.de"
-                  width={719}
-                  height={62}
-                  priority={false}
-                />
-                <span
-                  aria-hidden="true"
-                  className={`${styles.competitionSourceLinkArrow} ${styles.mobileOnly}`}
-                >
-                  ↗
-                </span>
-              </a>
-            </div>
-            <div className={styles.infoBarBlock}>
-              <span className={styles.infoBarMeta}>{competitionStats}</span>
-              <span className={styles.infoBarMeta}>
-                <strong className={styles.infoBarAccent}>{activeEdits} Änderungen</strong>,{" "}
-                {resolvedMatchCount} Spiele gewertet
-              </span>
-            </div>
-          </div>
-
-          {/* ── Table + Matches workspace ── */}
-          <section className={styles.workspace}>
-            {/* ── Table ── */}
-            <div className={styles.tablePanel}>
-              <div className={styles.tablePanelHeader}>
-                <div className={styles.tablePanelHeading}>
-                  <h2>Tabelle</h2>
-                </div>
-                <div className={styles.tablePanelActions}>
-                  <button
-                    className={`${styles.secondaryButton} ${styles.tableResetButton}`}
-                    onClick={() => setEditedResults({})}
-                    disabled={!activeEdits}
-                    type="button"
-                  >
-                    Zurücksetzen
-                  </button>
-                </div>
-                {showAdjustmentNotice ? (
-                  <p className={styles.adjustmentNotice}>
-                    Offizielle Tabellenkorrekturen sind berücksichtigt.
-                  </p>
-                ) : null}
-              </div>
-
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Pl.</th>
-                      <th>Vereine</th>
-                      <th className={`${styles.tableStatHeader} ${styles.mobileOptionalStat}`}>
-                        Sp.
-                      </th>
-                      <th className={styles.colHideable} title="Siege">S</th>
-                      <th className={styles.colHideable} title="Unentschieden">U</th>
-                      <th className={styles.colHideable} title="Niederlagen">N</th>
-                      <th className={styles.tableStatHeader}>Tore</th>
-                      <th className={styles.tableStatHeader}>+/-</th>
-                      <th className={styles.tableStatHeader}>Pkt.</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {computedTable.map((row) => {
-                      const delta = getTableDelta(row, competition.importedTable);
-                      const isTeamActive = row.teamId === activeTeamId;
-                      return (
-                        <tr key={row.teamId} className={isTeamActive ? styles.tableRowActive : undefined}>
-                          <td className={styles.rankCell}>{row.rank}.</td>
-                          <td className={styles.teamCell}>
-                            <button
-                              className={`${styles.teamFocusButton} ${isTeamActive ? styles.teamFocusButtonActive : ""}`}
-                              onClick={() =>
-                                setActiveTeamId((current) => (current === row.teamId ? null : row.teamId))
-                              }
-                              type="button"
-                              aria-pressed={isTeamActive}
-                              title={
-                                isTeamActive
-                                  ? `${row.teamName} ausblenden`
-                                  : `Alle Spiele von ${row.teamName} anzeigen`
-                              }
-                            >
-                              <div className={styles.teamCellContent}>
-                                {row.teamLogoUrl ? (
-                                  <Image
-                                    className={styles.teamLogo}
-                                    src={row.teamLogoUrl}
-                                    alt=""
-                                    width={20}
-                                    height={20}
-                                    sizes="20px"
-                                    unoptimized
-                                  />
-                                ) : null}
-                                <span className={styles.teamNameText}>{row.teamName}</span>
-                              </div>
-                            </button>
-                          </td>
-                          <td className={`${styles.tableStatCell} ${styles.mobileOptionalStat}`}>
-                            {row.games}
-                          </td>
-                          <td className={styles.colHideable}>{row.wins}</td>
-                          <td className={styles.colHideable}>{row.draws}</td>
-                          <td className={styles.colHideable}>{row.losses}</td>
-                          <td className={styles.tableStatCell}>{row.goalsFor}:{row.goalsAgainst}</td>
-                          <td className={styles.tableStatCell}>{signedDelta(row.goalDifference)}</td>
-                          <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td>
-                          <td>
-                            <span
-                              className={
-                                delta.positionDelta > 0
-                                  ? styles.trendUp
-                                  : delta.positionDelta < 0
-                                    ? styles.trendDown
-                                    : styles.trendFlat
-                              }
-                            >
-                              {delta.positionDelta > 0
-                                ? `↑${delta.positionDelta}`
-                                : delta.positionDelta < 0
-                                  ? `↓${Math.abs(delta.positionDelta)}`
-                                  : "—"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ── Matches (Spielpaarungen) ── */}
-            <div className={styles.matchesPanel}>
-              <div className={styles.matchesPanelHeader}>
-                <div className={styles.matchesPanelHeading}>
-                  <h2>{selectedTeam ? `Spiele von ${selectedTeam.teamName}` : "Spielpaarungen"}</h2>
-                  {selectedTeam ? (
-                    <button
-                      className={styles.matchesModeReset}
-                      onClick={() => setActiveTeamId(null)}
-                      type="button"
-                    >
-                      Alle Spieltage
-                    </button>
-                  ) : null}
-                </div>
-                <p className={styles.matchesPanelHint}>
-                  {selectedTeam
-                    ? "Alle Partien dieses Vereins, Ergebnisse direkt bearbeitbar."
-                    : "Spieltag wählen, horizontal wischen und Ergebnisse anpassen."}
-                </p>
-              </div>
-
-              <div className={styles.matchdayList}>
-                {selectedTeam ? (
-                  selectedTeamMatchGroups.map((group) => (
-                    <section
-                      key={`${selectedTeam.teamId}-${group.matchdayNumber}`}
-                      className={styles.matchdayCard}
-                    >
-                      <div className={`${styles.matchdayHeader} ${styles.matchdayHeaderCompact}`}>
-                        <div className={styles.matchdayHeaderText}>
-                          <span className={styles.matchdayBadge}>{group.matchdayNumber}. Spieltag</span>
-                          {group.headerDateLabel ? (
-                            <span className={styles.matchdayLabel}>{group.headerDateLabel}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                      {renderMatchRows(group.matchdayNumber, group.matches, { showDateSplits: false })}
-                    </section>
-                  ))
-                ) : (
-                  <>
-                    <div className={styles.matchdayToolbar}>
-                      <div className={styles.matchdayRailMeta}>
-                        <span className={styles.matchdayRailMetaLabel}>Spieltage</span>
-                        <span className={styles.matchdayRailMetaHint}>Links/rechts wischen oder tippen</span>
-                      </div>
-                      <div
-                        ref={matchdayRailRef}
-                        className={`${styles.matchdayRail} ${
-                          isMatchdayRailDragging ? styles.matchdayRailDragging : ""
-                        }`}
-                        role="tablist"
-                        aria-label="Spieltage"
-                        onWheel={handleMatchdayRailWheel}
-                        onPointerDown={handleMatchdayRailPointerDown}
-                        onPointerMove={handleMatchdayRailPointerMove}
-                        onPointerUp={handleMatchdayRailPointerUp}
-                        onPointerCancel={handleMatchdayRailPointerCancel}
-                        onLostPointerCapture={handleMatchdayRailLostPointerCapture}
-                        onClickCapture={handleMatchdayRailClickCapture}
-                      >
-                        {matchdays.map((matchday) => {
-                          const isActive = matchday.number === activeMatchday?.number;
-
-                          return (
-                            <button
-                              ref={(element) => {
-                                matchdayTabRefs.current[matchday.number] = element;
-                              }}
-                              key={matchday.number}
-                              id={`matchday-tab-${matchday.number}`}
-                              data-matchday-number={matchday.number}
-                              className={`${styles.matchdayTab} ${isActive ? styles.matchdayTabActive : ""}`}
-                              type="button"
-                              role="tab"
-                              aria-selected={isActive}
-                              aria-controls={`matchday-panel-${matchday.number}`}
-                              onClick={() => setActiveMatchdayNumber(matchday.number)}
-                            >
-                              <span>{matchday.number}. Spieltag</span>
-                              <strong>{matchday.matches.length} Partien</strong>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className={styles.matchdayNav}>
-                        <button
-                          className={styles.matchdayNavButton}
-                          onClick={() =>
-                            normalizedActiveMatchdayIndex > 0 &&
-                            setActiveMatchdayNumber(
-                              matchdays[normalizedActiveMatchdayIndex - 1].number,
-                            )
-                          }
-                          disabled={normalizedActiveMatchdayIndex <= 0}
-                          type="button"
-                        >
-                          Vorheriger
-                        </button>
-                        <span className={styles.matchdayCounter}>
-                          {normalizedActiveMatchdayIndex + 1} / {matchdays.length}
-                        </span>
-                        <button
-                          className={styles.matchdayNavButton}
-                          onClick={() =>
-                            normalizedActiveMatchdayIndex >= 0 &&
-                            normalizedActiveMatchdayIndex < matchdays.length - 1 &&
-                            setActiveMatchdayNumber(
-                              matchdays[normalizedActiveMatchdayIndex + 1].number,
-                            )
-                          }
-                          disabled={normalizedActiveMatchdayIndex >= matchdays.length - 1}
-                          type="button"
-                        >
-                          Nächster
-                        </button>
-                      </div>
-                    </div>
-
-                    {matchdays
-                      .filter((matchday) => matchday.number === activeMatchday?.number)
-                      .map((matchday) => {
-                        const matchdayHeaderLabel = getMatchdayHeaderLabel(matchday);
-
-                        return (
-                          <section
-                            key={matchday.number}
-                            id={`matchday-panel-${matchday.number}`}
-                            className={styles.matchdayCard}
-                            role="tabpanel"
-                            aria-labelledby={`matchday-tab-${matchday.number}`}
-                          >
-                            <div className={styles.matchdayHeader}>
-                              <div className={styles.matchdayHeaderText}>
-                                <span className={styles.matchdayBadge}>{matchday.number}. Spieltag</span>
-                                {matchdayHeaderLabel ? (
-                                  <span className={styles.matchdayLabel}>{matchdayHeaderLabel}</span>
-                                ) : null}
-                              </div>
-                              <span className={styles.matchdayMeta}>{matchday.matches.length} Partien</span>
-                            </div>
-                            {renderMatchRows(matchday.number, matchday.matches)}
-                          </section>
-                        );
-                      })}
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
-        </>
-      ) : (
-        <section className={styles.emptyState}>
-          <h2>Noch kein Wettbewerb geladen</h2>
-          <p>
-            Importiere eine URL oder wähle einen Wettbewerb über die Filter, um Tabelle und Spielpaarungen zu sehen.
-          </p>
-        </section>
-      )}
+      {renderCompetitionView()}
     </main>
   );
 }
+
+export default TabellenrechnerPage;

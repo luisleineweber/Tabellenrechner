@@ -9,8 +9,12 @@
   --text-muted: #666;
   --text-light: #999;
   --success: #2d7d46;
+  --warning: #d68910;
   --danger: #c0392b;
   --row-even: #f9f9f9;
+  --content-max-width: 1560px;
+  --site-header-height: 0px;
+  --site-gutter: clamp(10px, 1.8vw, 24px);
 }
 
 html,
@@ -22,7 +26,7 @@ body {
 body {
   min-height: 100vh;
   color: var(--text);
-  background: var(--bg);
+  background: #f4f1ed;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body), "Roboto", Arial, sans-serif;
@@ -67,41 +71,6 @@ textarea {
   font: inherit;
 }
 
-/* ── Site header bar ── */
-
-.siteHeader {
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.siteHeaderInner {
-  align-items: baseline;
-  display: flex;
-  gap: 8px;
-  margin: 0 auto;
-  max-width: 1280px;
-  padding: 8px 12px;
-}
-
-.siteWordmark {
-  border-left: 3px solid var(--accent);
-  color: var(--text);
-  font-family: var(--font-heading), "Roboto Condensed", Arial, sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding-left: 8px;
-  text-transform: uppercase;
-}
-
-.siteSub {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
 .siteShell {
   display: flex;
   flex: 1 0 auto;
@@ -111,11 +80,19 @@ textarea {
 
 .siteMain {
   flex: 1 0 auto;
+  padding: 10px var(--site-gutter) 0;
+}
+
+@media (max-width: 899px) {
+  .siteMain {
+    padding-inline: 0;
+  }
 }
 
 .siteFooter {
-  background: linear-gradient(180deg, #fafafa 0%, #f1f1f1 100%);
+  background: linear-gradient(180deg, #faf8f6 0%, #f1ede9 100%);
   border-top: 1px solid var(--border);
+  margin-top: 18px;
 }
 
 .siteFooterInner {
@@ -126,8 +103,8 @@ textarea {
   gap: 10px;
   justify-content: center;
   margin: 0 auto;
-  max-width: 1280px;
-  padding: 12px 12px 14px;
+  max-width: var(--content-max-width);
+  padding: 12px var(--site-gutter) 14px;
   text-align: center;
 }
 
@@ -170,16 +147,8 @@ textarea {
 }
 
 @media (min-width: 900px) {
-  .siteHeaderInner {
-    padding: 10px 16px;
-  }
-
-  .siteWordmark {
-    font-size: 18px;
-  }
-
-  .siteSub {
-    font-size: 13px;
+  .siteMain {
+    padding-top: 16px;
   }
 
   .siteFooter {
@@ -187,7 +156,7 @@ textarea {
   }
 
   .siteFooterInner {
-    padding: 14px 16px 18px;
+    padding: 14px var(--site-gutter) 18px;
   }
 
   .siteFooterIconLink {
