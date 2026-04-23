@@ -271,6 +271,10 @@ export function recalculateTableFromResults(
       return right.points - left.points;
     }
 
+    if ((left.games === 0) !== (right.games === 0)) {
+      return left.games === 0 ? 1 : -1;
+    }
+
     if (right.goalDifference !== left.goalDifference) {
       return right.goalDifference - left.goalDifference;
     }

@@ -245,4 +245,71 @@ describe("recalculateTable", () => {
       "3-Team C-1",
     ]);
   });
+
+  it("ranks 0-point teams with played matches above withdrawn 0-game teams", () => {
+    const withdrawnCompetition: Competition = {
+      ...competition,
+      importedTable: [
+        ...competition.importedTable,
+        {
+          teamId: "d",
+          teamName: "Withdrawn Team",
+          rank: 4,
+          originalRank: 4,
+          games: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+          points: 0,
+        },
+      ],
+      matchdays: [
+        {
+          number: 1,
+          label: "1. Spieltag",
+          url: "https://example.test/1",
+          matches: [
+            {
+              id: "m1",
+              matchday: 1,
+              kickoffText: "So. 01.09.2025 | 11:00",
+              homeTeamId: "a",
+              homeTeamName: "Team A",
+              guestTeamId: "c",
+              guestTeamName: "Team C",
+              detailUrl: "https://example.test/m1",
+              originalResult: { home: 2, guest: 0 },
+              isBye: false,
+            },
+            {
+              id: "m2",
+              matchday: 1,
+              kickoffText: "So. 01.09.2025 | 13:00",
+              homeTeamId: "b",
+              homeTeamName: "Team B",
+              guestTeamId: "c",
+              guestTeamName: "Team C",
+              detailUrl: "https://example.test/m2",
+              originalResult: { home: 1, guest: 0 },
+              isBye: false,
+            },
+          ],
+        },
+      ],
+    };
+
+    const table = recalculateTable(withdrawnCompetition, {
+      m1: { home: "2", guest: "0" },
+    });
+
+    expect(table.map((row) => `${row.teamName}-${row.games}-${row.points}`)).toEqual([
+      "Team A-1-3",
+      "Team B-1-3",
+      "Team C-2-0",
+      "Withdrawn Team-0-0",
+    ]);
+  });
 });
