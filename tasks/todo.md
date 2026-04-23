@@ -80,3 +80,4 @@
 - [x] Add a separate mobile stacked-view route with all matchdays visible and a side live-table rail.
 - [x] Refine the stacked mobile route with a persistent right-side table rail and denser score inputs.
 - [x] Replace the split mobile table rail with a shared sticky live-table dock and wider touch controls across both mobile layouts.
+- [x] Try the simple compact mobile match-row variant with smaller score controls and team text.

@@ -1827,6 +1827,62 @@
   .teamCell {
     max-width: 108px;
   }
+
+  .matchRow {
+    gap: 0 4px;
+    grid-template-columns: 34px minmax(0, 1fr) auto minmax(0, 1fr) 18px;
+    min-height: 44px;
+    padding: 5px 6px;
+  }
+
+  .matchKickoff {
+    font-size: 10px;
+  }
+
+  .matchHome,
+  .matchGuest {
+    font-size: 12px;
+  }
+
+  .matchHome {
+    padding-right: 3px;
+  }
+
+  .matchGuest {
+    padding-left: 3px;
+  }
+
+  .scoreStepper {
+    font-size: 15px;
+    height: 30px;
+    width: 22px;
+  }
+
+  .scoreBox {
+    gap: 5px;
+    min-height: 34px;
+    padding: 0 7px;
+  }
+
+  .scoreInput {
+    font-size: 15px;
+    height: 19px;
+    width: 14px;
+  }
+
+  .scoreColon {
+    font-size: 15px;
+  }
+
+  .matchStatus {
+    font-size: 10px;
+    width: 18px;
+  }
+
+  .matchStatusAction {
+    min-height: 24px;
+    min-width: 18px;
+  }
 }
 
 /* ── Tablet / small desktop (≥ 640px) ── */
