@@ -1136,6 +1136,36 @@ return (
     const showMatchDateSplits = options?.showDateSplits ?? countMatchdayDates(matches) > 1;
     let activeMatchDateKey: string | null = null;
 
+    function renderMatchTeam(
+      teamName: string,
+      teamLogoUrl: string | undefined,
+      side: "home" | "guest",
+    ) {
+      return (
+        <span
+          className={`${styles.matchTeam} ${
+            side === "home" ? styles.matchTeamHome : styles.matchTeamGuest
+          }`}
+          title={teamName}
+        >
+          <span className={styles.matchTeamContent}>
+            {teamLogoUrl ? (
+              <Image
+                className={styles.matchTeamLogo}
+                src={teamLogoUrl}
+                alt=""
+                width={18}
+                height={18}
+                sizes="18px"
+                unoptimized
+              />
+            ) : null}
+            <span className={styles.matchTeamName}>{teamName}</span>
+          </span>
+        </span>
+      );
+    }
+
     return (
       <div className={styles.matchList}>
         {matches.map((match) => {
@@ -1175,9 +1205,7 @@ return (
               >
                 <span className={styles.matchKickoff}>{getKickoffTimeLabel(match.kickoffText)}</span>
 
-                <span className={styles.matchHome} title={match.homeTeamName}>
-                  {match.homeTeamName}
-                </span>
+                {renderMatchTeam(match.homeTeamName, match.homeTeamLogoUrl, "home")}
 
                 <div
                   className={styles.scoreInputGroup}
@@ -1239,9 +1267,7 @@ return (
                   </button>
                 </div>
 
-                <span className={styles.matchGuest} title={match.guestTeamName}>
-                  {match.guestTeamName}
-                </span>
+                {renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest")}
 
                 <span
                   className={`${styles.matchOriginal} ${
@@ -1398,31 +1424,15 @@ return (
   }
 
   function renderSearchImportAction() {
-    const searchImportSummary = isLoadingCompetitionList
-      ? "Wettbewerbe werden geladen..."
-      : selectedCompetitionLabel
-        ? `${selectedCompetitionLabel} wird direkt in Tabelle und Spieltage importiert.`
-        : competitions.length
-          ? `${competitions.length} Wettbewerbe gefunden. Jetzt eine Auswahl importieren.`
-          : "Wähle erst Filter und Wettbewerb aus.";
-
     return (
-      <div className={`${styles.inlineActions} ${styles.searchImportActions}`}>
-        <p className={styles.searchImportSummary}>{searchImportSummary}</p>
-        <button
-          className={`${styles.primaryButton} ${styles.searchImportButton}`}
-          onClick={() => void importCompetition(selectedCompetitionUrl, "search")}
-          disabled={!selectedCompetitionUrl || isImporting}
-          type="button"
-        >
-          Auswahl importieren
-        </button>
-        {isBootstrapping ? (
-          <span className={`${styles.statusNote} ${styles.searchImportStatus}`}>
-            Filter aktualisieren...
-          </span>
-        ) : null}
-      </div>
+      <button
+        className={`${styles.primaryButton} ${styles.searchImportButton}`}
+        onClick={() => void importCompetition(selectedCompetitionUrl, "search")}
+        disabled={!selectedCompetitionUrl || isImporting || isLoadingCompetitionList || isBootstrapping}
+        type="button"
+      >
+        Auswahl importieren
+      </button>
     );
   }
 

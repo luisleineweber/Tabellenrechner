@@ -8,6 +8,7 @@ import type { Competition, ImportedMatch, MatchResult, Matchday, TableRow, Table
 
 const LEGACY_HOST = "https://www.fussball.de";
 const SUPPORTED_IMPORT_HOSTS = new Set(["fussball.de", "www.fussball.de", "next.fussball.de"]);
+const COMPETITION_PAGE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 type MatchdayOption = {
   number: number;
@@ -125,6 +126,7 @@ function extractScriptValue(html: string, key: string): string {
 async function fetchText(url: string): Promise<string> {
   return fetchUpstreamText(url, {
     cache: "no-store",
+    memoryTtlMs: COMPETITION_PAGE_CACHE_TTL_MS,
     errorBase: `Abruf von '${url}' fehlgeschlagen`,
   });
 }
@@ -337,6 +339,8 @@ async function parseMatchRow($: CheerioAPI, row: AnyNode, matchday: number, rowI
   const guestTeamId = guestLink.length
     ? parseTeamId(guestLink.attr("href") ?? guestTeamName)
     : `${homeTeamId}-bye`;
+  const homeTeamLogoUrl = parseTeamLogoUrl(homeLink);
+  const guestTeamLogoUrl = guestLink.length ? parseTeamLogoUrl(guestLink) : undefined;
   const [homeScoreRaw, guestScoreRaw] = decodedScore.split(":");
   const result: MatchResult = isBye
     ? { home: null, guest: null }
@@ -353,8 +357,10 @@ async function parseMatchRow($: CheerioAPI, row: AnyNode, matchday: number, rowI
     kickoffText: decodedKickoff,
     homeTeamId,
     homeTeamName,
+    homeTeamLogoUrl,
     guestTeamId,
     guestTeamName,
+    guestTeamLogoUrl,
     detailUrl: absoluteUrl(detailLink.attr("href")),
     originalResult: result,
     isBye,
@@ -366,8 +372,16 @@ async function parseMatches($: CheerioAPI, matchday: number): Promise<ImportedMa
     .toArray()
     .filter((row) => $(row).find("td.column-club").length > 0);
 
-  const matches = await Promise.all(candidates.map((row, index) => parseMatchRow($, row, matchday, index)));
-  return ensureUniqueMatchIds(matches.filter((match): match is ImportedMatch => Boolean(match)));
+  const parsedMatches = await Promise.all(candidates.map((row, index) => parseMatchRow($, row, matchday, index)));
+  const matches: ImportedMatch[] = [];
+
+  for (const match of parsedMatches) {
+    if (match) {
+      matches.push(match);
+    }
+  }
+
+  return ensureUniqueMatchIds(matches);
 }
 
 async function withConcurrency<T, R>(

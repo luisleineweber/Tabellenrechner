@@ -44,8 +44,10 @@ export type ImportedMatch = {
   kickoffText: string;
   homeTeamId: string;
   homeTeamName: string;
+  homeTeamLogoUrl?: string | undefined;
   guestTeamId: string;
   guestTeamName: string;
+  guestTeamLogoUrl?: string | undefined;
   detailUrl: string;
   originalResult: MatchResult;
   isBye: boolean;

@@ -1,5 +1,26 @@
 # Todo
 
+- [x] Set match team names to font-weight 500.
+- [x] Verify the targeted CSS correction.
+
+- [x] Set the matchday heading weight to 500 across mobile and desktop.
+- [x] Verify the small CSS correction.
+
+- [x] Align matchday navigation typography with the table/body font.
+- [x] Verify the matchday font correction with lint/build.
+
+- [x] Restore stronger match-row typography across desktop and mobile.
+- [x] Remove the search import action container and keep only the import button.
+- [x] Verify the UI correction with lint/build.
+
+- [x] Add short-lived server-side cache for fussball.de HTML and WAM JSON fetches.
+- [x] Deduplicate concurrent upstream fetches and keep retry/timeout behavior intact.
+- [x] Verify cache behavior with focused tests plus lint/build.
+
+- [x] Add desktop match-row team crests and tighten the score inputs on wider screens.
+- [x] Add or update importer and UI tests for match-row logo rendering.
+- [x] Verify the slice with focused tests and a production build.
+
 - [x] Add green, orange, and red odd/even table zone row variants.
 
 - [x] Add fussball.de playoff table zones and render them orange.

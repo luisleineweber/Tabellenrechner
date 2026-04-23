@@ -1,21 +1,11 @@
 import type { CompetitionOption, Option, SearchBootstrap, SearchFilters } from "@/lib/fussballde/types";
+import { fetchUpstreamJson } from "./request";
 
 const LEGACY_HOST = "https://www.fussball.de";
 const DEFAULT_ASSOCIATION_ID = "22";
 const DEFAULT_TEAM_TYPE_ID = "343";
 const DEFAULT_LEAGUE_ID = "120";
-const REQUEST_TIMEOUT_MS = 8000;
-const MAX_FETCH_ATTEMPTS = 2;
-const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
-
-class SearchFetchError extends Error {
-  constructor(
-    message: string,
-    readonly retryable: boolean,
-  ) {
-    super(message);
-  }
-}
+const WAM_CACHE_TTL_MS = 30 * 60 * 1000;
 
 type BaseResponse = {
   currentSaison: string;
@@ -86,66 +76,13 @@ function createBootstrapResult(
   };
 }
 
-function isRetryableStatus(status: number): boolean {
-  return RETRYABLE_STATUS_CODES.has(status);
-}
-
-async function waitBeforeRetry(attempt: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, attempt * 250));
-}
-
 async function getJson<T>(path: string): Promise<T> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
-    try {
-      const response = await fetch(`${LEGACY_HOST}/${path}`, {
-        cache: "no-store",
-        headers: {
-          "user-agent": "Mozilla/5.0 Tabellenrechner",
-        },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-
-      if (!response.ok) {
-        const retryable = isRetryableStatus(response.status);
-
-        if (retryable && attempt < MAX_FETCH_ATTEMPTS) {
-          await waitBeforeRetry(attempt);
-          continue;
-        }
-
-        throw new SearchFetchError(
-          `Der Such-Endpunkt '${path}' konnte nicht geladen werden (${response.status}).`,
-          retryable,
-        );
-      }
-
-      return response.json() as Promise<T>;
-    } catch (error) {
-      lastError =
-        error instanceof Error
-          ? error
-          : new Error(`Der Such-Endpunkt '${path}' konnte nicht geladen werden.`);
-
-      if (error instanceof SearchFetchError && !error.retryable) {
-        break;
-      }
-
-      if (attempt >= MAX_FETCH_ATTEMPTS) {
-        break;
-      }
-
-      await waitBeforeRetry(attempt);
-    }
-  }
-
-  if (lastError?.message?.includes(path)) {
-    throw lastError;
-  }
-
-  const suffix = lastError?.message ? ` (${lastError.message})` : "";
-  throw new Error(`Der Such-Endpunkt '${path}' konnte nicht geladen werden.${suffix}`);
+  return fetchUpstreamJson<T>(`${LEGACY_HOST}/${path}`, {
+    cache: "no-store",
+    memoryCacheKey: `wam:${path}`,
+    memoryTtlMs: WAM_CACHE_TTL_MS,
+    errorBase: `Der Such-Endpunkt '${path}' konnte nicht geladen werden`,
+  });
 }
 
 export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promise<SearchBootstrap> {

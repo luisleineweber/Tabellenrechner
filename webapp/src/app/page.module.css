@@ -375,26 +375,6 @@
   margin-top: 12px;
 }
 
-.searchImportActions {
-  align-items: center;
-  background: linear-gradient(180deg, #fff 0%, #faf7f4 100%);
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
-  padding: 8px 10px;
-}
-
-.searchImportSummary {
-  color: var(--text-muted);
-  flex: 1 1 280px;
-  font-size: 12px;
-  line-height: 1.45;
-  margin: 0;
-}
-
-.searchImportStatus {
-  width: 100%;
-}
-
 .primaryButton,
 .secondaryButton {
   border-radius: 2px;
@@ -503,6 +483,7 @@
 
 .searchImportButton {
   box-shadow: 0 10px 24px rgba(224, 36, 36, 0.16);
+  margin-top: 12px;
   min-height: 46px;
   min-width: 220px;
   padding-inline: 20px;
@@ -1296,6 +1277,7 @@
   background: color-mix(in srgb, var(--accent) 4%, #fff);
   border-bottom: 1px solid var(--border-light);
   display: flex;
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   gap: 10px;
   justify-content: space-between;
   padding: 5px 10px;
@@ -1363,6 +1345,7 @@
   cursor: pointer;
   display: grid;
   flex: 0 0 auto;
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   gap: 3px;
   min-width: 110px;
   padding: 9px 10px 8px;
@@ -1389,10 +1372,10 @@
 
 .matchdayTab span {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 750;
   letter-spacing: 0;
-  line-height: 1.05;
-  text-transform: uppercase;
+  line-height: 1.1;
+  text-transform: none;
 }
 
 .matchdayTab strong {
@@ -1420,6 +1403,7 @@
   border-radius: 999px;
   color: var(--text);
   cursor: pointer;
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   font-size: 12px;
   font-weight: 700;
   min-height: 40px;
@@ -1454,6 +1438,7 @@
 
 .matchdayCounter {
   color: var(--text-muted);
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1484,20 +1469,23 @@
 
 .matchdayBadge {
   color: var(--text);
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .matchdayLabel {
   color: var(--text-muted);
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   font-size: 10px;
   line-height: 1.2;
 }
 
 .matchdayMeta {
   color: var(--text-light);
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
   font-size: 10px;
 }
 
@@ -1576,8 +1564,13 @@
 }
 
 .matchHome {
+  color: var(--text);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  line-height: 1.12;
   overflow: hidden;
   text-align: right;
   text-overflow: ellipsis;
@@ -1586,12 +1579,76 @@
 }
 
 .matchGuest {
+  color: var(--text);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  line-height: 1.12;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-left: 6px;
+}
+
+.matchTeam {
+  min-width: 0;
+}
+
+.matchTeamHome {
+  text-align: right;
+}
+
+.matchTeamGuest {
+  text-align: left;
+}
+
+.matchTeamContent {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.matchTeamHome .matchTeamContent {
+  flex-direction: row-reverse;
+}
+
+.matchTeamGuest .matchTeamContent {
+  flex-direction: row;
+}
+
+.matchTeamName {
+  color: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchTeamLogo,
+.matchTeamLogoPlaceholder {
+  display: none;
+  flex: 0 0 18px;
+  height: 18px;
+  object-fit: contain;
+  width: 18px;
+}
+
+.matchTeamLogo {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+}
+
+.matchTeamLogoPlaceholder {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  opacity: 0.45;
 }
 
 .scoreInputGroup {
@@ -1874,7 +1931,8 @@
 
   .matchHome,
   .matchGuest {
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 750;
   }
 
   .matchHome {
@@ -1953,7 +2011,8 @@
 
   .matchHome,
   .matchGuest {
-    font-size: 13px;
+    font-size: 13.5px;
+    font-weight: 750;
   }
 
   .matchStatus {
@@ -2179,7 +2238,7 @@
   }
 
   .matchRow {
-    grid-template-columns: 60px 1fr auto 1fr 50px 24px;
+    grid-template-columns: 60px minmax(0, 1.12fr) auto minmax(0, 1.12fr) 50px 24px;
     padding: 8px 14px;
     min-height: 54px;
   }
@@ -2196,13 +2255,17 @@
   }
 
   .matchHome {
-    font-size: 13px;
-    padding-right: 8px;
+    font-size: 14px;
+    padding-right: 6px;
   }
 
   .matchGuest {
-    font-size: 13px;
-    padding-left: 8px;
+    font-size: 14px;
+    padding-left: 6px;
+  }
+
+  .matchTeamContent {
+    gap: 7px;
   }
 
   .matchOriginal {
@@ -2248,26 +2311,11 @@
     font-size: 12px;
   }
 
-  .searchImportActions {
-    gap: 14px;
-    justify-content: space-between;
-    margin-top: 14px;
-    padding: 10px 12px;
-  }
-
-  .searchImportSummary {
-    font-size: 13px;
-    max-width: 46ch;
-  }
-
-  .searchImportStatus {
-    margin-left: auto;
-    width: auto;
-  }
-
   .searchImportButton {
     margin-left: auto;
+    margin-top: 14px;
     min-width: 240px;
+    width: auto;
   }
 
   .tableResetButton {
@@ -2281,24 +2329,29 @@
 
   .scoreStepper {
     font-size: 18px;
-    height: 34px;
-    width: 30px;
+    height: 32px;
+    width: 26px;
   }
 
   .scoreBox {
-    gap: 10px;
-    min-height: 46px;
-    padding: 0 12px;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 10px;
   }
 
   .scoreInput {
-    font-size: 17px;
-    height: 24px;
-    width: 19px;
+    font-size: 15px;
+    height: 22px;
+    width: 16px;
   }
 
   .scoreColon {
-    font-size: 17px;
+    font-size: 15px;
+  }
+
+  .matchTeamLogo,
+  .matchTeamLogoPlaceholder {
+    display: block;
   }
 
   .mobileFilterDialog {
@@ -2395,7 +2448,7 @@
   }
 
   .matchRow {
-    grid-template-columns: 58px minmax(0, 1.1fr) auto minmax(0, 1.1fr) 42px 24px;
+    grid-template-columns: 58px minmax(0, 1.14fr) auto minmax(0, 1.14fr) 42px 24px;
   }
 
   .matchOriginal {
@@ -2408,17 +2461,17 @@
 
   .scoreStepper {
     font-size: 18px;
-    height: 34px;
-    width: 30px;
+    height: 32px;
+    width: 26px;
   }
 
   .scoreInput {
-    font-size: 17px;
-    height: 24px;
-    width: 19px;
+    font-size: 15px;
+    height: 22px;
+    width: 16px;
   }
 
   .scoreBox {
-    min-height: 46px;
+    min-height: 40px;
   }
 }

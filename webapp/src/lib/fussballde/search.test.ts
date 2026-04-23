@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { clearUpstreamMemoryCache } from "./request";
 import { getSearchBootstrap } from "./search";
 
 function jsonResponse(payload: unknown, init?: ResponseInit): Response {
@@ -12,6 +13,7 @@ function jsonResponse(payload: unknown, init?: ResponseInit): Response {
 }
 
 afterEach(() => {
+  clearUpstreamMemoryCache();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

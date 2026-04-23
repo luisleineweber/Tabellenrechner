@@ -10,3 +10,4 @@
 - When adding alternate layouts, keep the default render path explicit and verify it still renders the table plus active-matchday selector; shared helpers should not replace the main workspace with the stacked route by accident.
 - When fixing German UI copy on Windows, verify suspect strings by reading the source as UTF-8 before editing; PowerShell output can show mojibake even when the file content is already correct.
 - `fussball.de` can emit repeated `spielfrei` fixtures without detail links, so imported match IDs need a collision-safe fallback instead of relying on matchday plus team names alone.
+- When importing optional match metadata from `Promise.all`, collect the non-null rows into an explicitly typed accumulator before passing them onward; otherwise the TypeScript build can reject a nullable union that a `filter(Boolean)`-style expression did not narrow enough.

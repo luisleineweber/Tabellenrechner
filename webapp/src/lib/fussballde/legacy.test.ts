@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { recalculateTable } from "../table-calculator";
+import { clearUpstreamMemoryCache } from "./request";
 
 vi.mock("@/lib/fussballde/font-decoder", () => ({
   decodeObfuscatedText: vi.fn(async () => "-"),
@@ -88,6 +89,7 @@ describe("loadCompetitionFromUrl", () => {
   });
 
   afterEach(() => {
+    clearUpstreamMemoryCache();
     vi.unstubAllGlobals();
   });
 
@@ -100,6 +102,11 @@ describe("loadCompetitionFromUrl", () => {
       "https://www.fussball.de/export.media/-/action/getLogo/format/0/id/00ES8GN8VS0000BDVV0AG08LVUPGND5I/verband/0123456789ABCDEF0123456700004110",
     );
     expect(competition.importedTable.every((row) => row.teamLogoUrl)).toBe(true);
+    const firstMatch = competition.matchdays[0]?.matches[0];
+    expect(firstMatch?.homeTeamLogoUrl).toBeDefined();
+    expect(firstMatch?.guestTeamLogoUrl).toBeDefined();
+    expect(firstMatch?.homeTeamLogoUrl).toContain("export.media");
+    expect(firstMatch?.guestTeamLogoUrl).toContain("export.media");
     expect(
       recalculateTable(competition, {}).map((row) => ({
         teamId: row.teamId,
