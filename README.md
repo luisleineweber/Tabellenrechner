@@ -1,63 +1,63 @@
 # Tabellenrechner
 
-Standalone web app for importing amateur football competitions from `fussball.de` and recalculating the table after manual result edits, similar to the Kicker Tabellenrechner.
+Standalone Next.js app for importing amateur football competitions from `fussball.de`, editing match results, and recalculating the live table in a Kicker-like interface.
 
 ## Live App
 
 - Production: `https://tabellenrechner.vercel.app/`
 - Repository: `https://github.com/Loues000/Tabellenrechner`
 
-The app is now deployed on Vercel. The old GitHub Pages fallback is no longer the primary way to access the project.
+The production app is deployed on Vercel. The root `index.html` is only a lightweight handoff page; the real importer lives in `webapp`.
 
-## Scope
+## What It Does
 
-- Import a competition via direct `fussball.de` URL.
-- Discover competitions via the legacy WAM filter endpoints.
+- Import a competition by direct `fussball.de` URL.
+- Discover competitions through the legacy WAM filter endpoints.
 - Parse standings and all matchdays from legacy `fussball.de` pages.
-- Decode obfuscated kickoff times and scores via the published font files.
+- Decode obfuscated kickoff times and scores with the published font files.
 - Let users edit results client-side and recalculate the live table immediately.
-- Keep parser, decoder, search, and calculation logic separate so the core can be reused later.
+- Keep parser, decoder, search, and table-calculation logic isolated.
 
 V1 does not include user accounts or persistence.
 
-## Repository Structure
+## Repo Layout
 
 ```text
 .
-+-- index.html                         # static handoff page with links to the live app and repo
-+-- samples/
+|-- index.html
+|-- samples/
 |   `-- fussballde/
-|       |-- css/                      # captured obfuscation-related stylesheets
-|       |-- fonts/                    # font files used for decoding
-|       |-- html/                     # captured legacy competition pages and fragments
-|       `-- wam/                      # captured WAM endpoint responses
-+-- tasks/
-|   |-- lessons.md                    # durable implementation and deployment lessons
-|   `-- todo.md                       # current task tracking
+|       |-- css/
+|       |-- fonts/
+|       |-- html/
+|       `-- wam/
+|-- tasks/
+|   |-- lessons.md
+|   `-- todo.md
 `-- webapp/
-    |-- public/                       # static assets
-    |-- src/
-    |   |-- app/
-    |   |   |-- api/
-    |   |   |   |-- competition/route.ts   # URL import endpoint
-    |   |   |   |-- search/bootstrap/route.ts
-    |   |   |   `-- search/competitions/route.ts
-    |   |   |-- globals.css
-    |   |   |-- layout.tsx
-    |   |   `-- page.tsx              # Tabellenrechner UI
-    |   `-- lib/
-    |       |-- fussballde/
-    |       |   |-- font-decoder.ts
-    |       |   |-- legacy.ts
-    |       |   |-- search.ts
-    |       |   `-- types.ts
-    |       |-- table-calculator.test.ts
-    |       `-- table-calculator.ts
+    |-- README.md
     |-- package.json
-    `-- README.md                     # workspace-specific commands and notes
+    |-- public/
+    `-- src/
+        |-- app/
+        |   |-- api/
+        |   |   |-- competition/route.ts
+        |   |   |-- search/bootstrap/route.ts
+        |   |   `-- search/competitions/route.ts
+        |   |-- globals.css
+        |   |-- layout.tsx
+        |   `-- page.tsx
+        `-- lib/
+            |-- fussballde/
+            |   |-- font-decoder.ts
+            |   |-- legacy.ts
+            |   |-- search.ts
+            |   `-- types.ts
+            |-- table-calculator.test.ts
+            `-- table-calculator.ts
 ```
 
-The application itself still lives in `webapp`. Root-level npm scripts proxy into that workspace so the repo can be started from the top level.
+The root-level npm scripts proxy into `webapp`, so you can work from the repository root without entering the workspace first.
 
 ## Tech Stack
 
@@ -66,7 +66,7 @@ The application itself still lives in `webapp`. Root-level npm scripts proxy int
 - TypeScript
 - Cheerio for legacy HTML parsing
 - Fontkit for `fussball.de` obfuscation-font decoding
-- Vitest for calculation tests
+- Vitest for table-calculation tests
 
 ## Local Development
 
@@ -92,7 +92,7 @@ npm run test
 npm run build
 ```
 
-You can also work directly inside `webapp/` if you prefer. The root scripts simply forward to that package.
+You can also work directly inside `webapp/` if you prefer.
 
 ## Deployment
 
@@ -110,7 +110,7 @@ If you create another Vercel project from this repository, keep the same setting
 https://vercel.com/new/clone?repository-url=https://github.com/Loues000/Tabellenrechner&root-directory=webapp
 ```
 
-The root `index.html` remains as a lightweight static handoff page. The real importer depends on Next.js server routes under `webapp/src/app/api/*`, so a pure static host cannot run the full app.
+The importer depends on Next.js server routes under `webapp/src/app/api/*`, so a static host cannot run the full app.
 
 ### Google Search / Custom Domain
 
@@ -126,21 +126,13 @@ For local setup, see `webapp/.env.example`.
 
 ## How It Works
 
-1. The UI either accepts a competition URL or loads filter defaults from `fussball.de/wam_base.json` and related WAM JSON endpoints.
+1. The UI accepts a competition URL or loads filter defaults from `fussball.de/wam_base.json` and related WAM JSON endpoints.
 2. The server fetches the selected legacy `fussball.de` competition page and resolves the available matchdays.
 3. The importer parses the published table and all fixtures from the legacy markup.
 4. Obfuscated date, kickoff, and score text is decoded with the referenced font files.
 5. The client keeps edited results in local state and recalculates the standings from the normalized match list.
 
 If the importer cannot parse the source structurally, the app returns a clear error instead of silently degrading.
-
-## Current Status
-
-- URL import and WAM-based competition search are implemented.
-- Legacy standings and matchday normalization are implemented.
-- Obfuscation font decoding for dates and scores is implemented.
-- Editable result overrides recalculate the table immediately.
-- Unit coverage exists for calculator behavior around imported results and overrides.
 
 ## Notes
 

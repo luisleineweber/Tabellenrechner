@@ -1,5 +1,28 @@
 # Todo
 
+- [x] Align landing-page base colors with webapp palette tokens while preserving the green field identity.
+- [x] Keep no-scroll responsive behavior unchanged after palette remap.
+- [x] Verify the color-adjusted landing page with build.
+
+- [x] Remove technical/internal handoff details from the GitHub Pages landing copy.
+- [x] Make the landing page strictly single-screen with no page scrolling.
+- [x] Harden responsive behavior for narrow and short viewports and verify with build.
+
+- [x] Rebuild the GitHub Pages handoff page from scratch with a new visual concept.
+- [x] Add purposeful animations and motion-safe fallbacks for the new page.
+- [x] Verify the redesigned static page and document the lesson from this revision request.
+
+- [x] Add a regression test for 0-point teams with played matches ranking above withdrawn 0-game teams.
+- [x] Update the live table sorting tie-breaker for equal-point teams with zero played matches.
+- [x] Verify the table logic with focused tests and lint/build.
+
+- [x] Add a design context file for the static landing page and align the handoff page with it.
+- [x] Redesign the GitHub Pages handoff page with the new editorial sports visual direction.
+- [x] Verify the updated static page renders cleanly.
+
+- [x] Refresh the root README so it matches the current Vercel deployment and `webapp` workspace layout.
+- [x] Verify the updated README against the current repo structure and scripts.
+
 - [x] Set match team names to font-weight 500.
 - [x] Verify the targeted CSS correction.
 
