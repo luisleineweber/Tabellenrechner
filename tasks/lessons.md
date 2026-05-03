@@ -15,3 +15,6 @@
 - Table sorting must treat zero-game rows as non-participating tie-breaker cases after points are equal; otherwise withdrawn teams with 0:0 goals can rank above clubs that actually played and lost.
 - For the public landing page, keep copy user-facing and avoid internal/developer details; if no-scroll is required, enforce `100dvh` + `overflow:hidden` and add height-based breakpoints (`max-height`) so content still fits on short screens.
 - For final visual polish on cross-surface pages, remap shared colors to canonical webapp tokens first (accent/text/bg/border) and only then layer secondary accents like green sports panels.
+- When a local browser import appears stuck but production works, verify the API endpoint directly and reload/restart the local dev server before treating it as an importer bug; stale dev-server requests or in-memory pending state can make the UI look permanently busy.
+- Score inputs must reserve visual width for the full accepted value range; if inputs sanitize to two digits, style them wide enough for two bold digits at every active breakpoint so imported results like 0:12 do not clip.
+- After widening form controls for readability, re-check the total control footprint against neighboring content; preserve accepted value readability with input width first, then reduce surrounding padding/gaps so team names keep priority.

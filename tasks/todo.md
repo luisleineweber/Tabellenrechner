@@ -1,5 +1,19 @@
 # Todo
 
+- [x] Tighten the score result box while keeping two-digit scores readable.
+- [x] Verify the compact score field CSS.
+
+- [x] Widen score inputs so two-digit results are not clipped.
+- [x] Verify the CSS-only score input fix.
+
+- [x] Diagnose why the local example direct import remains pending while the released app finishes.
+- [x] Compare direct local API behavior against browser behavior.
+- [x] Apply the smallest fix or document the local-only cause: after restarting the local dev server and reloading the browser, the same UI import succeeds; the earlier pending state was local stale request/dev-server state.
+
+- [x] Start the local Next.js app on port 3001.
+- [x] Smoke-test the local page with Browser Use.
+- [x] Capture any console/runtime issues and mark the test outcome: page renders locally with no app console errors, but example direct import remains pending beyond two minutes.
+
 - [x] Align landing-page base colors with webapp palette tokens while preserving the green field identity.
 - [x] Keep no-scroll responsive behavior unchanged after palette remap.
 - [x] Verify the color-adjusted landing page with build.

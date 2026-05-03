@@ -1725,9 +1725,9 @@
     0 1px 0 rgba(224, 36, 36, 0.1);
   color: var(--text);
   display: flex;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 10px;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 7px;
 }
 
 .scoreBoxCompact {
@@ -1747,14 +1747,14 @@
   outline: none;
   text-align: center;
   transition: color 100ms ease;
-  width: 18px;
+  width: 20px;
   caret-color: currentColor;
 }
 
 .scoreInputCompact {
   font-size: 13px;
   height: 16px;
-  width: 10px;
+  width: 16px;
 }
 
 .scoreInput:focus {
@@ -1958,7 +1958,7 @@
   .scoreInput {
     font-size: 15px;
     height: 19px;
-    width: 14px;
+    width: 20px;
   }
 
   .scoreColon {
@@ -2026,7 +2026,7 @@
   }
 
   .scoreInput {
-    width: 15px;
+    width: 20px;
     height: 18px;
     font-size: 14px;
   }
@@ -2324,7 +2324,7 @@
   }
 
   .scoreInputGroup {
-    gap: 8px;
+    gap: 4px;
   }
 
   .scoreStepper {
@@ -2334,15 +2334,15 @@
   }
 
   .scoreBox {
-    gap: 8px;
-    min-height: 40px;
-    padding: 0 10px;
+    gap: 5px;
+    min-height: 36px;
+    padding: 0 7px;
   }
 
   .scoreInput {
     font-size: 15px;
     height: 22px;
-    width: 16px;
+    width: 20px;
   }
 
   .scoreColon {
@@ -2428,7 +2428,7 @@
   .scoreInput {
     height: 18px;
     font-size: 14px;
-    width: 14px;
+    width: 20px;
   }
 
   .scoreStepper {
@@ -2468,10 +2468,10 @@
   .scoreInput {
     font-size: 15px;
     height: 22px;
-    width: 16px;
+    width: 20px;
   }
 
   .scoreBox {
-    min-height: 40px;
+    min-height: 36px;
   }
 }
