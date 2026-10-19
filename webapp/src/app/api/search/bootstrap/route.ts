@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
     const bootstrap = await getSearchBootstrap({
+      competitionTypeId: params.get("competitionTypeId") ?? undefined,
       associationId: params.get("associationId") ?? undefined,
       seasonId: params.get("seasonId") ?? undefined,
       teamTypeId: params.get("teamTypeId") ?? undefined,

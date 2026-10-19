@@ -9,6 +9,7 @@ export type CompetitionOption = {
 };
 
 export type SearchFilters = {
+  competitionTypeId: string;
   associationId: string;
   seasonId: string;
   teamTypeId: string;
@@ -50,6 +51,9 @@ export type ImportedMatch = {
   guestTeamLogoUrl?: string | undefined;
   detailUrl: string;
   originalResult: MatchResult;
+  resultNote?: string;
+  homeTeamIsPlaceholder?: boolean;
+  guestTeamIsPlaceholder?: boolean;
   isBye: boolean;
 };
 
@@ -58,6 +62,7 @@ export type Matchday = {
   label: string;
   url: string;
   matches: ImportedMatch[];
+  stageType?: "knockout" | "group";
 };
 
 export type TableZone = "promotion" | "promotion-playoff" | "relegation-playoff" | "relegation";
@@ -91,6 +96,7 @@ export type TableAdjustment = {
 };
 
 export type Competition = {
+  kind: "league" | "cup";
   id: string;
   name: string;
   season: string;

@@ -9,6 +9,7 @@ import {
 import type { Competition } from "@/lib/fussballde/types";
 
 const competition: Competition = {
+  kind: "league",
   id: "demo",
   name: "Testliga",
   season: "25/26",

@@ -103,6 +103,7 @@ describe("loadCompetitionFromUrl", () => {
     );
     expect(competition.importedTable.every((row) => row.teamLogoUrl)).toBe(true);
     const firstMatch = competition.matchdays[0]?.matches[0];
+    expect(firstMatch?.detailUrl.endsWith(`/spiel/${firstMatch.id}`)).toBe(true);
     expect(firstMatch?.homeTeamLogoUrl).toBeDefined();
     expect(firstMatch?.guestTeamLogoUrl).toBeDefined();
     expect(firstMatch?.homeTeamLogoUrl).toContain("export.media");

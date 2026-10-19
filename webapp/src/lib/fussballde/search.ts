@@ -72,6 +72,7 @@ function createBootstrapResult(
       teamTypeId: defaults.teamTypeId ?? "",
       leagueId: defaults.leagueId ?? "",
       areaId: defaults.areaId ?? "",
+      competitionTypeId: defaults.competitionTypeId ?? "1",
     },
   };
 }
@@ -86,6 +87,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promise<SearchBootstrap> {
+  const competitionTypeId = partial.competitionTypeId === "308" ? "308" : "1";
   const base = await getJson<BaseResponse>("wam_base.json");
   const associations = toOptions(base.Mandanten);
   const associationId = pickValid(partial.associationId, associations, DEFAULT_ASSOCIATION_ID);
@@ -96,10 +98,11 @@ export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promi
     return createBootstrapResult(associations, seasons, {
       associationId,
       seasonId,
+      competitionTypeId,
     });
   }
 
-  const kinds = await getJson<KindsResponse>(`wam_kinds_${associationId}_${seasonId}_1.json`);
+  const kinds = await getJson<KindsResponse>(`wam_kinds_${associationId}_${seasonId}_${competitionTypeId}.json`);
   const teamTypes = toOptions(kinds.Mannschaftsart);
   const teamTypeId = pickValid(partial.teamTypeId, teamTypes, DEFAULT_TEAM_TYPE_ID);
 
@@ -111,6 +114,7 @@ export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promi
         associationId,
         seasonId,
         teamTypeId,
+        competitionTypeId,
       },
       teamTypes,
     );
@@ -130,6 +134,7 @@ export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promi
       teamTypeId,
       leagueId,
       areaId,
+      competitionTypeId,
     },
     teamTypes,
     leagues,
@@ -139,7 +144,7 @@ export async function getSearchBootstrap(partial: Partial<SearchFilters>): Promi
 
 export async function getCompetitionOptions(filters: SearchFilters): Promise<CompetitionOption[]> {
   const response = await getJson<Record<string, Record<string, Record<string, string>>>>(
-    `wam_competitions_${filters.associationId}_${filters.seasonId}_1_${filters.teamTypeId}_${filters.leagueId}_${filters.areaId}.json`,
+    `wam_competitions_${filters.associationId}_${filters.seasonId}_${filters.competitionTypeId}_${filters.teamTypeId}_${filters.leagueId}_${filters.areaId}.json`,
   );
 
   const competitionsRecord = response[filters.leagueId]?.[filters.areaId];
