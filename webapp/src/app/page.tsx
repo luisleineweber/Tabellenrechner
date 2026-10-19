@@ -9,6 +9,7 @@ import type {
 } from "react";
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 import styles from "./page.module.css";
+import { CupBracket } from "@/components/cup-bracket";
 import type {
   Competition,
   CompetitionOption,
@@ -47,6 +48,7 @@ const SAMPLE_URL =
   "https://www.fussball.de/spieltag/kreisliga-b-gruppe-1-kreis-essen-kreisliga-b-herren-saison2526-niederrhein/-/spieldatum/2026-03-15/staffel/02TMJM5PBK00000AVS5489BUVSSD35NB-G#!/";
 
 const EMPTY_FILTERS: SearchFilters = {
+  competitionTypeId: "1",
   associationId: "",
   seasonId: "",
   teamTypeId: "",
@@ -174,6 +176,7 @@ export function TabellenrechnerPage({
   const [isDesktopUrlImportExpanded, setIsDesktopUrlImportExpanded] = useState(false);
   const [isMatchdayRailDragging, setIsMatchdayRailDragging] = useState(false);
   const [competition, setCompetition] = useState<Competition | null>(null);
+  const [importVersion, setImportVersion] = useState(0);
   const [activeMatchdayNumber, setActiveMatchdayNumber] = useState<number | null>(null);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [armedResetMatchId, setArmedResetMatchId] = useState<string | null>(null);
@@ -188,6 +191,9 @@ export function TabellenrechnerPage({
     key: keyof SearchFilters;
     options: SearchBootstrap["associations"];
   }> = [
+    { label: "Wettbewerbstyp", key: "competitionTypeId", options: [
+      { id: "1", label: "Meisterschaft" }, { id: "308", label: "Pokal" },
+    ] },
     { label: "Verband", key: "associationId", options: bootstrap?.associations ?? [] },
     { label: "Saison", key: "seasonId", options: bootstrap?.seasons ?? [] },
     { label: "Mannschaftsart", key: "teamTypeId", options: bootstrap?.teamTypes ?? [] },
@@ -383,6 +389,7 @@ export function TabellenrechnerPage({
 
       startTransition(() => {
         setCompetition(payload);
+        setImportVersion((version) => version + 1);
         setEditedResults({});
       });
 
@@ -680,7 +687,7 @@ export function TabellenrechnerPage({
     event.stopPropagation();
   }
 
-  const computedTable = competition ? recalculateTable(competition, editedResults) : [];
+  const computedTable = competition?.kind === "league" ? recalculateTable(competition, editedResults) : [];
   const activeEdits = competition ? countCommittedEdits(competition, editedResults) : 0;
   const pendingEdits = competition ? countPendingEdits(competition, editedResults) : 0;
   const matchdays = competition?.matchdays ?? [];
@@ -754,7 +761,7 @@ export function TabellenrechnerPage({
         .join(" · ")
     : "";
   const competitionStats = competition
-    ? `${competition.matchdays.length} Spieltage, ${importedMatchCount} Spiele`
+    ? `${competition.matchdays.length} ${competition.kind === "cup" ? "Runden" : "Spieltage"}, ${importedMatchCount} Spiele`
     : "";
   const showAdjustmentNotice = competition ? hasTableAdjustments(competition) : false;
   const selectedCompetitionLabel =
@@ -1361,7 +1368,7 @@ return (
             disabled={isImporting}
             type="button"
           >
-            {isImporting ? "Import läuft..." : "Staffel laden"}
+            {isImporting ? "Import läuft..." : "Wettbewerb laden"}
           </button>
           <button
             className={styles.secondaryButton}
@@ -1369,6 +1376,9 @@ return (
             type="button"
           >
             Beispiel einsetzen
+          </button>
+          <button className={styles.secondaryButton} type="button" onClick={() => setUrlInput("https://www.fussball.de/spieltag/-/staffel/02TQO9IRRK000000VS5489BUVVJ8R9DS-C")}>
+            Pokalbeispiel einsetzen
           </button>
         </div>
         {importError ? <p className={styles.error}>{importError}</p> : null}
@@ -1476,7 +1486,7 @@ return (
     return (
       <>
         <p className={styles.panelText}>
-          Wähle Verband, Saison und Liga, um einen Wettbewerb zu laden.
+          Wähle Meisterschaft oder Pokal und grenze den Wettbewerb mit den Filtern ein.
         </p>
         <div className={styles.desktopOnly}>{renderDesktopUrlImportPanel()}</div>
         <div className={styles.desktopOnly}>
@@ -1575,10 +1585,10 @@ return (
         </div>
         <div className={styles.infoBarBlock}>
           <span className={styles.infoBarMeta}>{competitionStats}</span>
-          <span className={styles.infoBarMeta}>
+          {competition.kind === "league" ? <span className={styles.infoBarMeta}>
             <strong className={styles.infoBarAccent}>{activeEdits} Änderungen</strong>
             {pendingEdits ? `, ${pendingEdits} offen` : ""}, {resolvedMatchCount} Spiele gewertet
-          </span>
+          </span> : null}
         </div>
       </div>
     );
@@ -1813,6 +1823,10 @@ return (
       return renderEmptyState();
     }
 
+    if (competition.kind === "cup") {
+      return <>{renderCompetitionInfoBar()}<CupBracket key={`${competition.id}-${importVersion}`} competition={competition} /></>;
+    }
+
     return isStackedMobileLayout ? renderStackedCompetitionView() : renderDefaultCompetitionView();
   }
 
@@ -1824,8 +1838,8 @@ return (
           Tabellenrechner für fussball.de-Wettbewerbe
         </h1>
         <p className={styles.introText}>
-          Importiere Staffeln von fussball.de, bearbeite Ergebnisse spieltagsgenau und sieh
-          sofort, wie sich die Live-Tabelle verändert.
+          Importiere Ligen und Pokale von fussball.de. Bearbeite Ergebnisse und sieh
+          sofort die Live-Tabelle oder den Turnierbaum.
         </p>
       </section>
       <dialog

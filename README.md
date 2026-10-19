@@ -14,11 +14,19 @@ The production app is deployed on Vercel. The root `index.html` is only a lightw
 - Import a competition by direct `fussball.de` URL.
 - Discover competitions through the legacy WAM filter endpoints.
 - Parse standings and all matchdays from legacy `fussball.de` pages.
+- Import cups, including named knockout rounds and published group stages.
+- Show a scrollable cup bracket with editable results and known advancement paths.
 - Decode obfuscated kickoff times and scores with the published font files.
 - Let users edit results client-side and recalculate the live table immediately.
 - Keep parser, decoder, search, and table-calculation logic isolated.
 
 V1 does not include user accounts or persistence.
+
+For a cup, select `Pokal` in the competition type filter or import its `fussball.de` URL.
+Round URLs also load the complete cup. The bracket keeps unpublished draws open.
+Changed winners move through known knockout paths. A changed pairing clears its old result.
+For a tied prediction, select the team that advances. Group stages keep their published matches;
+the app does not infer qualification from group results.
 
 ## Repo Layout
 

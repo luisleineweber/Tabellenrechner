@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const competitions = await getCompetitionOptions({
+      competitionTypeId: params.get("competitionTypeId") === "308" ? "308" : "1",
       associationId: params.get("associationId") as string,
       seasonId: params.get("seasonId") as string,
       teamTypeId: params.get("teamTypeId") as string,

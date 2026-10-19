@@ -1,10 +1,10 @@
 import { load } from "cheerio";
 import type { Cheerio, CheerioAPI } from "cheerio";
 import type { AnyNode } from "domhandler";
-import { decodeObfuscatedText } from "@/lib/fussballde/font-decoder";
+import { absoluteUrl, parseMatches, parseTeamLogoUrl } from "./legacy-matches";
 import { fetchUpstreamText } from "./request";
 import { createEmptyTableAdjustment, recalculateTableFromResults } from "../table-calculator";
-import type { Competition, ImportedMatch, MatchResult, Matchday, TableRow, TableZone } from "@/lib/fussballde/types";
+import type { Competition, Matchday, TableRow, TableZone } from "@/lib/fussballde/types";
 
 const LEGACY_HOST = "https://www.fussball.de";
 const SUPPORTED_IMPORT_HOSTS = new Set(["fussball.de", "www.fussball.de", "next.fussball.de"]);
@@ -15,9 +15,11 @@ type MatchdayOption = {
   label: string;
   url: string;
   selected: boolean;
+  stageType?: "knockout" | "group";
 };
 
 type CompetitionProfile = {
+  kind: Competition["kind"];
   id: string;
   name: string;
   season: string;
@@ -35,26 +37,6 @@ export class CompetitionImportError extends Error {
   ) {
     super(message);
   }
-}
-
-function absoluteUrl(value?: string | null): string {
-  if (!value) {
-    return "";
-  }
-
-  if (value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-
-  if (value.startsWith("//")) {
-    return `https:${value}`;
-  }
-
-  if (value.startsWith("/")) {
-    return `${LEGACY_HOST}${value}`;
-  }
-
-  return `${LEGACY_HOST}/${value}`;
 }
 
 function extractStaffelId(input: string): string | null {
@@ -131,13 +113,6 @@ async function fetchText(url: string): Promise<string> {
   });
 }
 
-async function decodeNodeText(node: Cheerio<AnyNode>): Promise<string> {
-  const fontId = node.find("[data-obfuscation]").first().attr("data-obfuscation");
-  const text = node.text().replace(/\u00a0/g, " ");
-  const decoded = await decodeObfuscatedText(text, fontId);
-  return decoded.replace(/\s+/g, " ").trim();
-}
-
 function parseOptionalNumber(value: string): number | null {
   const parsed = Number.parseInt(value.replace(/[^\d-]/g, ""), 10);
   return Number.isNaN(parsed) ? null : parsed;
@@ -169,37 +144,6 @@ function parseTeamId(url: string): string {
   return url.match(/team-id\/([^/?]+)/)?.[1] ?? url;
 }
 
-function parseMatchId(url: string): string {
-  return url.match(/\/spiel\/([^/?]+)/)?.[1] ?? url;
-}
-
-function ensureUniqueMatchIds(matches: ImportedMatch[]): ImportedMatch[] {
-  const seenIds = new Map<string, number>();
-
-  return matches.map((match) => {
-    const collisionCount = seenIds.get(match.id) ?? 0;
-    seenIds.set(match.id, collisionCount + 1);
-
-    if (collisionCount === 0) {
-      return match;
-    }
-
-    return {
-      ...match,
-      id: `${match.id}__dup${collisionCount + 1}`,
-    };
-  });
-}
-
-function parseTeamLogoUrl(node: Cheerio<AnyNode>): string | undefined {
-  const imageUrl =
-    node.find(".club-logo img").first().attr("src") ??
-    node.find(".club-logo [data-responsive-image]").first().attr("data-responsive-image");
-
-  const normalizedUrl = absoluteUrl(imageUrl);
-  return normalizedUrl || undefined;
-}
-
 function parseProfile(html: string): CompetitionProfile {
   const id = extractScriptValue(html, "edWettbewerbId");
   const name = extractScriptValue(html, "edWettbewerbName");
@@ -215,6 +159,8 @@ function parseProfile(html: string): CompetitionProfile {
   }
 
   return {
+    kind: extractScriptValue(html, "edWettbewerbTypId") === "308" ||
+      extractScriptValue(html, "edWettkampfTypName") === "Pokale" ? "cup" : "league",
     id,
     name,
     season,
@@ -241,6 +187,27 @@ function parseMatchdayOptions($: CheerioAPI): MatchdayOption[] {
       };
     })
     .filter((option) => option.number > 0 && option.url);
+}
+
+function parseCupRoundOptions($: CheerioAPI): MatchdayOption[] {
+  const options: MatchdayOption[] = [];
+  const seen = new Set<string>();
+  for (const element of $("select option[data-href]").toArray()) {
+    const option = $(element);
+    const text = option.text().replace(/\s+/g, " ").trim();
+    if (!/^(KO-Runde|Gruppenrunde)\s*-/i.test(text)) continue;
+    const url = absoluteUrl(option.attr("data-href"));
+    if (seen.has(url) || new URL(url).hostname !== "www.fussball.de") continue;
+    seen.add(url);
+    options.push({
+      number: options.length + 1,
+      label: text.replace(/^(KO-Runde|Gruppenrunde)\s*-\s*/i, ""),
+      url,
+      selected: option.is("[selected]") || option.hasClass("on"),
+      stageType: /^Gruppenrunde/i.test(text) ? "group" : "knockout",
+    });
+  }
+  return options;
 }
 
 function parseTable($: CheerioAPI): TableRow[] {
@@ -307,83 +274,6 @@ function parseTableZone($row: Cheerio<AnyNode>): TableZone | undefined {
   return undefined;
 }
 
-function parseScoreValue(value: string): number | null {
-  const trimmed = value.trim();
-
-  if (!trimmed || trimmed === "-" || trimmed === "spielfrei") {
-    return null;
-  }
-
-  return Number.parseInt(trimmed, 10);
-}
-
-async function parseMatchRow($: CheerioAPI, row: AnyNode, matchday: number, rowIndex: number) {
-  const $row = $(row);
-  const homeLink = $row.find("td.column-club").first().find("a").first();
-  const guestCell = $row.find("td.column-club.no-border").first();
-  const guestLink = guestCell.find("a").first();
-  const detailLink = $row.find("td.column-score a").first();
-  const homeTeamName = homeLink.find(".club-name").text().replace(/\s+/g, " ").trim();
-  const guestTeamName =
-    guestLink.find(".club-name").text().replace(/\s+/g, " ").trim() ||
-    guestCell.find(".info-text").text().replace(/\s+/g, " ").trim();
-
-  if (!homeTeamName) {
-    return null;
-  }
-
-  const decodedScore = await decodeNodeText($row.find("td.column-score").first());
-  const decodedKickoff = await decodeNodeText($row.find("td.column-date").first());
-  const isBye = guestTeamName.toLowerCase() === "spielfrei";
-  const homeTeamId = parseTeamId(homeLink.attr("href") ?? homeTeamName);
-  const guestTeamId = guestLink.length
-    ? parseTeamId(guestLink.attr("href") ?? guestTeamName)
-    : `${homeTeamId}-bye`;
-  const homeTeamLogoUrl = parseTeamLogoUrl(homeLink);
-  const guestTeamLogoUrl = guestLink.length ? parseTeamLogoUrl(guestLink) : undefined;
-  const [homeScoreRaw, guestScoreRaw] = decodedScore.split(":");
-  const result: MatchResult = isBye
-    ? { home: null, guest: null }
-    : {
-        home: parseScoreValue(homeScoreRaw ?? ""),
-        guest: parseScoreValue(guestScoreRaw ?? ""),
-      };
-
-  return {
-    id: detailLink.length
-      ? parseMatchId(detailLink.attr("href") ?? homeTeamName)
-      : `${matchday}-${rowIndex}-${homeTeamId}-${guestTeamId}`,
-    matchday,
-    kickoffText: decodedKickoff,
-    homeTeamId,
-    homeTeamName,
-    homeTeamLogoUrl,
-    guestTeamId,
-    guestTeamName,
-    guestTeamLogoUrl,
-    detailUrl: absoluteUrl(detailLink.attr("href")),
-    originalResult: result,
-    isBye,
-  } satisfies ImportedMatch;
-}
-
-async function parseMatches($: CheerioAPI, matchday: number): Promise<ImportedMatch[]> {
-  const candidates = $('table.table.table-striped.table-full-width.thead tbody tr')
-    .toArray()
-    .filter((row) => $(row).find("td.column-club").length > 0);
-
-  const parsedMatches = await Promise.all(candidates.map((row, index) => parseMatchRow($, row, matchday, index)));
-  const matches: ImportedMatch[] = [];
-
-  for (const match of parsedMatches) {
-    if (match) {
-      matches.push(match);
-    }
-  }
-
-  return ensureUniqueMatchIds(matches);
-}
-
 async function withConcurrency<T, R>(
   values: T[],
   limit: number,
@@ -410,7 +300,8 @@ async function loadLandingPage(url: string): Promise<{ html: string; sourceUrl: 
     try {
       const html = await fetchText(candidate);
 
-      if (html.includes('select size="1" name="spieltag"') || html.includes('select name="spieltag"')) {
+      const $ = load(html);
+      if (parseMatchdayOptions($).length || parseCupRoundOptions($).length) {
         return { html, sourceUrl: candidate };
       }
     } catch {
@@ -423,6 +314,7 @@ async function loadLandingPage(url: string): Promise<{ html: string; sourceUrl: 
 
 function buildTableAdjustments(importedTable: TableRow[], matchdays: Matchday[]) {
   const baselineCompetition: Competition = {
+    kind: "league",
     id: "baseline",
     name: "baseline",
     season: "",
@@ -465,33 +357,39 @@ export async function loadCompetitionFromUrl(inputUrl: string): Promise<Competit
   const { html: landingHtml, sourceUrl } = await loadLandingPage(inputUrl.trim());
   const profile = parseProfile(landingHtml);
   const $landing = load(landingHtml);
-  const matchdayOptions = parseMatchdayOptions($landing).sort((left, right) => left.number - right.number);
+  const isCup = profile.kind === "cup";
+  const matchdayOptions = isCup ? parseCupRoundOptions($landing)
+    : parseMatchdayOptions($landing).sort((left, right) => left.number - right.number);
   const selectedMatchday = matchdayOptions.find((option) => option.selected) ?? matchdayOptions[0];
 
   if (!selectedMatchday) {
     throw new Error("Es konnten keine Spieltage für den Wettbewerb ermittelt werden.");
   }
 
-  const importedTable = parseTable($landing);
+  const importedTable = isCup ? [] : parseTable($landing);
 
-  if (!importedTable.length) {
+  if (!isCup && !importedTable.length) {
     throw new Error("Die Wettbewerbstabelle konnte nicht aus der importierten Seite gelesen werden.");
   }
 
+  const canReuseLanding = !isCup || [profile.id, extractStaffelId(selectedMatchday.url)]
+    .includes(extractStaffelId(sourceUrl));
   const matchdays = await withConcurrency(matchdayOptions, 4, async (option) => {
-    const pageHtml = option.number === selectedMatchday.number ? landingHtml : await fetchText(option.url);
+    const pageHtml = canReuseLanding && option.number === selectedMatchday.number ? landingHtml : await fetchText(option.url);
     const $ = load(pageHtml);
 
     return {
       number: option.number,
       label: option.label,
       url: option.url,
+      stageType: option.stageType,
       matches: await parseMatches($, option.number),
     } satisfies Matchday;
   });
-  const tableAdjustments = buildTableAdjustments(importedTable, matchdays);
+  const tableAdjustments = isCup ? {} : buildTableAdjustments(importedTable, matchdays);
 
   return {
+    kind: profile.kind,
     id: profile.id,
     name: profile.name,
     season: profile.season,
