@@ -15,14 +15,14 @@ The calculator keeps its red football identity. The page now uses more space, qu
 
 ## Council review
 
-Target: every named member must give the same screenshot set at least 9/10. Review is in progress.
+Target: every named member must give the same screenshot set at least 9/10. Opus and Sol each approved the final set at 9/10. Muse and DeepSeek remain blocked by the OpenCode connection.
 
 | Delegate | Round 1 | Round 2 | Round 3 | Round 4 |
 | --- | --- | --- | --- | --- |
-| Claude Opus 5.5 | 7/10 | 8/10 | no score | pending |
+| Claude Opus 5.5 | 7/10 | 8/10 | no score | 9/10 |
 | GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 |
-| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | pending |
-| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | pending |
+| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | no score: server unavailable |
+| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | no score: server unavailable |
 
 Round 1 found an off-screen active matchday, repeated mobile controls, small secondary text, excessive header space, weak reset feedback, and a false rank arrow for a tied withdrawn team. These have fixes and new captures. Direct mobile entry is deliberate: 16px text and 24px-wide fields preserve space for full club names. The mobile result link goes directly to the score fields while preserving the full table above them. Official shared ranks are retained, so the withdrawn teams legitimately share rank 15 without false movement. The review does not require a full rewrite of the existing large page files.
 
@@ -45,13 +45,13 @@ Round 1 found an off-screen active matchday, repeated mobile controls, small sec
 
 Vercel rejected Node.js 20 before compilation. Runtime pins now use Node.js 26, which also ran the local checks. Dependency versions did not change.
 
-## Next review set
+## Final screenshot set
 
-Round 2 Sol: 8.5/10. Its remaining findings were poor word breaks at 320px and less name space after desktop edits. The new set keeps whole words, moves goal difference to the full table below 360px, and puts original-score captions under the controls. Browser checks, lint, and build pass after these changes. Opus round 2 scored 8/10. OpenCode is unreachable, so Muse and DeepSeek gave no second-round score. Sol gave round 3 a score of 9/10. Round 4 adds the remaining Opus fixes: points visible on opening the full table, a quieter disabled reset, and footer/legend captures. All four members still need to approve the same final set.
+Round 2 Sol: 8.5/10. Its remaining findings were poor word breaks at 320px and less name space after desktop edits. The new set keeps whole words, moves goal difference to the full table below 360px, and puts original-score captions under the controls. Browser checks, lint, and build pass after these changes. Opus round 2 scored 8/10. OpenCode is unreachable, so Muse and DeepSeek gave no second-round score. Sol gave round 3 a score of 9/10. Round 4 adds the remaining Opus fixes: points visible on opening the full table, a quieter disabled reset, and footer/legend captures. The two OpenCode members still need to review the final set.
 
 The Node.js 26 preview deployment passed on commit be2e97e.
 
 - [Desktop table footer and legend](round4/desktop-table-bottom.png)
 - [Mobile table footer and legend](round4/mobile-table-bottom.png)
 
-Round 4 Sol: 9/10 on all 13 images, with no design blockers. The long area value in the short filter dialog is a minor detail. Opus is pending; OpenCode still cannot run Muse or DeepSeek. Both Vercel checks passed on ff3f0ba.
+Round 4 Sol: 9/10 on all 13 images, with no design blockers. The long area value in the short filter dialog is a minor detail. Opus also gave all 13 final images 9/10 with no blockers. OpenCode still cannot run Muse or DeepSeek. Both Vercel checks passed on ff3f0ba.

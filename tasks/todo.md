@@ -151,4 +151,5 @@
 ## UI Polish Overhall
 - [x] Refine the app design with clear type, space, and controls.
 - [x] Check desktop and mobile screenshots, loaded and empty states, and run tests, lint, and build.
-- [ ] Repeat council review until all members score at least 9/10; open a draft PR with the review record.
+- [x] Open draft PR #2 with the screenshot set and review record.
+- [ ] Obtain 9/10 from every council member on the final set. Opus and Sol each gave 9/10; Muse and DeepSeek need the OpenCode connection.
