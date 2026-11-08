@@ -20,7 +20,7 @@ Target: every named member must give the same screenshot set at least 9/10. Revi
 | Delegate | Round 1 | Round 2 | Round 3 | Round 4 |
 | --- | --- | --- | --- | --- |
 | Claude Opus 5.5 | 7/10 | 8/10 | no score | pending |
-| GPT Sol | 8/10 | 8.5/10 | 9/10 | pending |
+| GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 |
 | Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | pending |
 | DeepSeek Free | 7.5/10 | no score: server unavailable | no score | pending |
 
@@ -53,3 +53,5 @@ The Node.js 26 preview deployment passed on commit be2e97e.
 
 - [Desktop table footer and legend](round4/desktop-table-bottom.png)
 - [Mobile table footer and legend](round4/mobile-table-bottom.png)
+
+Round 4 Sol: 9/10 on all 13 images, with no design blockers. The long area value in the short filter dialog is a minor detail. Opus is pending; OpenCode still cannot run Muse or DeepSeek. Both Vercel checks passed on ff3f0ba.
