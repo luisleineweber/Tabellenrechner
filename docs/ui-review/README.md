@@ -4,14 +4,14 @@ The calculator keeps its red football identity with a smaller loaded header, qui
 
 ## Council review
 
-Target: every named member must give the same final screenshot set at least 9/10. Round 5 is in progress. Earlier ratings apply only to their original screenshot sets.
+Target met in round 5: Claude Opus, GPT Sol, Muse, and DeepSeek each gave the same 14-image set 9/10, with no design blockers. The reviewed UI and images are from commit 2c9e7dd. Later changes only record the results. Earlier ratings apply only to their original screenshot sets.
 
 | Delegate | Round 1 | Round 2 | Round 3 | Round 4 | Round 5 |
 | --- | --- | --- | --- | --- | --- |
-| Claude Opus 5.5 | 7/10 | 8/10 | no score | 9/10 | pending |
-| GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 | pending |
-| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | 9/10 | pending |
-| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | 8.5/10 | pending |
+| Claude Opus 5.5 | 7/10 | 8/10 | no score | 9/10 | 9/10 |
+| GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 | 9/10 |
+| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | 9/10 | 9/10 |
+| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | 8.5/10 | 9/10 |
 
 Round 5 fixes DeepSeek's remaining findings: sticky rank/club columns, 44x44px reset targets, one direct-entry control model, and ellipses for long filter values. The full selected label is available in the field title. The mobile result link preserves quick access while keeping the full table above the matches. Official shared ranks remain stable after unrelated edits.
 
