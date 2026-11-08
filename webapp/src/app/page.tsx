@@ -707,7 +707,7 @@ export function TabellenrechnerPage({
                 N
               </th>
               <th className={styles.tableStatHeader}>Tore</th>
-              <th className={styles.tableStatHeader}>+/-</th>
+              <th className={`${styles.tableStatHeader} ${styles.goalDifferenceStat}`}>+/-</th>
               <th className={styles.tableStatHeader}>Pkt.</th>
               <th aria-label="Platzveränderung"></th>
             </tr>
@@ -785,7 +785,7 @@ export function TabellenrechnerPage({
                   <td className={styles.tableStatCell}>
                     {row.goalsFor}:{row.goalsAgainst}
                   </td>
-                  <td className={styles.tableStatCell}>{signedDelta(row.goalDifference)}</td>
+                  <td className={`${styles.tableStatCell} ${styles.goalDifferenceStat}`}>{signedDelta(row.goalDifference)}</td>
                   <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td>
                   <td>
                     <span
@@ -1076,7 +1076,7 @@ return (
     }
 
     return (
-      <div className={styles.matchList} data-has-edits={matches.some((match) => hasCommittedEdit(match, editedResults)) || undefined}>
+      <div className={styles.matchList}>
         {matches.map((match) => {
           const effectiveResult = getEffectiveResult(match, editedResults);
           const pending = hasPendingEdit(match, editedResults);
@@ -1175,10 +1175,6 @@ return (
                   >
                     +
                   </button>
-                </div>}
-
-                {!match.isBye ? renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest") : null}
-
                 <span
                   className={`${styles.matchOriginal} ${
                     committedEdit ? styles.matchOriginalVisible : styles.matchOriginalHidden
@@ -1187,6 +1183,9 @@ return (
                 >
                   {committedEdit ? `Orig. ${originalResult}` : ""}
                 </span>
+                </div>}
+
+                {!match.isBye ? renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest") : null}
 
                 <span className={styles.matchStatus}>
                   {hasStoredEdit ? (

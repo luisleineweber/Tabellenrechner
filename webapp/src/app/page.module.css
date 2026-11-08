@@ -2431,7 +2431,7 @@
   .panelHeader h2 { font-size: 18px; }
   .selectGroup select, .selectGroupWide select, .textarea { font-size: 16px; }
   .table td.teamCell { max-width: 0; width: 100%; }
-  .teamNameText { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+  .teamNameText { white-space: normal; overflow-wrap: normal; line-height: 1.35; }
   .table td { padding-block: 10px; }
   .matchRow {
     grid-template-columns: 36px minmax(0, 1fr) auto 24px;
@@ -2477,7 +2477,7 @@
 @media (min-width: 900px) {
   .controlGridCollapsed { display: none; }
   .infoBar { align-items: center; grid-template-columns: minmax(0, 1fr) auto auto; }
-  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 54px 28px; }
+  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 28px; }
 }
 @media (max-width: 899px) {
   .controlGridLoaded { display: none; }
@@ -2493,8 +2493,7 @@
 }
 
 @media (min-width: 640px) {
-  .matchList:not([data-has-edits]) .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 28px; }
-  .matchList:not([data-has-edits]) .matchOriginal { display: none; }
+  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 28px; }
 }
 @media (max-width: 639px) {
   .matchRow[data-bye] { grid-template-areas: "kickoff home score status"; min-height: 56px; }
@@ -2520,3 +2519,15 @@
 .fullTableDialogCard > .panelHeader { margin: 0; padding: 16px 12px 0; }
 .fullTableDialogCard > .panelText { padding: 8px 12px; }
 .fullTableDialogCard .table td.teamCell { max-width: 200px; width: 200px; }
+
+.scoreInputGroup { position: relative; }
+.matchOriginal {
+  left: 50%; min-width: 0; position: absolute; top: calc(100% + 2px);
+  transform: translateX(-50%); white-space: nowrap;
+}
+.matchOriginalVisible { display: block; }
+.matchRow:has([data-edited]) { padding-bottom: 24px; }
+@media (max-width: 359px) {
+  .goalDifferenceStat { display: none; }
+}
+.fullTableDialogCard .goalDifferenceStat { display: table-cell; }

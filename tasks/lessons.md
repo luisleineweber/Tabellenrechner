@@ -26,3 +26,4 @@
 
 - Rank assignment used each array index after a score edit. This broke official shared ranks and showed false movement for tied withdrawn teams. Preserve shared official ranks while their ranking criteria remain equal. Keep a regression test for unrelated score edits.
 - Vercel rejected the obsolete Node.js 20 pin before compilation. Match the root, webapp, lockfile, .nvmrc files, and setup guide to the supported runtime. Read deployment logs when a preview fails despite a passing local build.
+- At 320px, preserve whole words in club names and move one secondary statistic to the full-table view. Keep original score captions under the score controls so edits do not reduce club-name space. Check both edited and unchanged rows.
