@@ -18,3 +18,10 @@
 - When a local browser import appears stuck but production works, verify the API endpoint directly and reload/restart the local dev server before treating it as an importer bug; stale dev-server requests or in-memory pending state can make the UI look permanently busy.
 - Score inputs must reserve visual width for the full accepted value range; if inputs sanitize to two digits, style them wide enough for two bold digits at every active breakpoint so imported results like 0:12 do not clip.
 - After widening form controls for readability, re-check the total control footprint against neighboring content; preserve accepted value readability with input width first, then reduce surrounding padding/gaps so team names keep priority.
+
+- When the user gives a newer skill path, read that exact copy before the next round. Use the current named members. Do not use an older duplicate skill file.
+- A score placeholder used a near-white color on a pale field. Use the muted text token and check empty score fields in the rendered UI. Keep phone score text at 16px and provide at least 24px targets.
+- A hidden-only utility on a button lost to a later button display rule. Put desktop-only actions inside a wrapper and verify the mobile render. Show the imported competition in its summary, not the unimported search selection.
+- Smooth scrollIntoView did not keep the selected matchday visible after a viewport change. Scroll only the matchday rail and observe its width. Verify the selected tab bounds after import and at every test width.
+
+- Rank assignment used each array index after a score edit. This broke official shared ranks and showed false movement for tied withdrawn teams. Preserve shared official ranks while their ranking criteria remain equal. Keep a regression test for unrelated score edits.

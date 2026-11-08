@@ -147,3 +147,8 @@
 - [x] Refine the stacked mobile route with a persistent right-side table rail and denser score inputs.
 - [x] Replace the split mobile table rail with a shared sticky live-table dock and wider touch controls across both mobile layouts.
 - [x] Try the simple compact mobile match-row variant with smaller score controls and team text.
+
+## UI Polish Overhall
+- [x] Refine the app design with clear type, space, and controls.
+- [x] Check desktop and mobile screenshots, loaded and empty states, and run tests, lint, and build.
+- [ ] Repeat council review until all members score at least 9/10; open a draft PR with the review record.

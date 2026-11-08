@@ -3,6 +3,7 @@ import {
   countCommittedEdits,
   countPendingEdits,
   getEffectiveResult,
+  getTableDelta,
   getTableZoneForRank,
   recalculateTable,
 } from "./table-calculator";
@@ -311,5 +312,25 @@ describe("recalculateTable", () => {
       "Team C-2-0",
       "Withdrawn Team-0-0",
     ]);
+  });
+
+  it("preserves an official shared rank when an unrelated score changes", () => {
+    const withdrawn = {
+      ...competition.importedTable[2], games: 0, wins: 0, draws: 0, losses: 0,
+      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
+      rank: 4, originalRank: 4,
+    };
+    const sharedRankCompetition: Competition = {
+      ...competition,
+      importedTable: [...competition.importedTable,
+        { ...withdrawn, teamId: "d", teamName: "Withdrawn D" },
+        { ...withdrawn, teamId: "e", teamName: "Withdrawn E" },
+      ],
+    };
+    const table = recalculateTable(sharedRankCompetition, { m1: { home: "0", guest: "2" } });
+    const withdrawnRows = table.filter((row) => ["d", "e"].includes(row.teamId));
+    expect(withdrawnRows.map((row) => row.rank)).toEqual([4, 4]);
+    expect(withdrawnRows.map((row) => getTableDelta(row, sharedRankCompetition.importedTable).positionDelta))
+      .toEqual([0, 0]);
   });
 });
