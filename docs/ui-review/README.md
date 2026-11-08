@@ -40,3 +40,7 @@ Round 1 found an off-screen active matchday, repeated mobile controls, small sec
 - [Mobile at 320px](mobile-320.png)
 - [Short phone filter dialog](mobile-filter-short.png)
 - [Full table on a phone](mobile-full-table.png)
+
+## Preview runtime
+
+Vercel rejected Node.js 20 before compilation. Runtime pins now use Node.js 26, which also ran the local checks. Dependency versions did not change.

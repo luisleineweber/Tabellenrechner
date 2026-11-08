@@ -25,3 +25,4 @@
 - Smooth scrollIntoView did not keep the selected matchday visible after a viewport change. Scroll only the matchday rail and observe its width. Verify the selected tab bounds after import and at every test width.
 
 - Rank assignment used each array index after a score edit. This broke official shared ranks and showed false movement for tied withdrawn teams. Preserve shared official ranks while their ranking criteria remain equal. Keep a regression test for unrelated score edits.
+- Vercel rejected the obsolete Node.js 20 pin before compilation. Match the root, webapp, lockfile, .nvmrc files, and setup guide to the supported runtime. Read deployment logs when a preview fails despite a passing local build.
