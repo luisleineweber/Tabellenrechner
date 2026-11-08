@@ -28,3 +28,4 @@
 - Vercel rejected the obsolete Node.js 20 pin before compilation. Match the root, webapp, lockfile, .nvmrc files, and setup guide to the supported runtime. Read deployment logs when a preview fails despite a passing local build.
 - At 320px, preserve whole words in club names and move one secondary statistic to the full-table view. Keep original score captions under the score controls so edits do not reduce club-name space. Check both edited and unchanged rows.
 - An all-columns dialog must expose points beside club names on opening. Verify the initial horizontal viewport, not only the presence of hidden columns. Disabled controls must have less visual weight than enabled actions.
+- On a horizontally scrolling full table, keep rank and club columns fixed so later statistics retain their subject. Use 44px reset targets and one direct-entry score model on all screen sizes. Set ellipsis and preserve the full selected filter label in its title.

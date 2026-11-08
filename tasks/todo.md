@@ -152,4 +152,4 @@
 - [x] Refine the app design with clear type, space, and controls.
 - [x] Check desktop and mobile screenshots, loaded and empty states, and run tests, lint, and build.
 - [x] Open draft PR #2 with the screenshot set and review record.
-- [ ] Obtain 9/10 from every council member on the final set. Opus and Sol each gave 9/10; Muse and DeepSeek need the OpenCode connection.
+- [ ] Obtain 9/10 from every council member on the final set. Round 5 follows three 9/10 ratings and DeepSeek's 8.5/10 in round 4.

@@ -1,57 +1,45 @@
 # UI Polish Overhall
 
-The calculator keeps its red football identity. The page now uses more space, quieter borders, readable club names, and a smaller header after import. Competition controls close after import. Phones use direct score entry to give club names room. Edited results show a reset button. Bye rows use plain text.
-
-## Checks
-
-- 31 tests pass, including the regression test for official shared ranks after an unrelated score edit.
-- Lint and production build pass.
-- Live fussball.de URL import returned 200. The screenshot check then reused that exact response for stable match data.
-- Score edits and full reset work. The active matchday stays visible at 320, 390, 768, 1024, and 1440px. No page overflow or browser errors were found.
-- Single-result reset works with one click or tap. The 320×667 filter dialog fits and permits scrolling. The full table exposes hidden phone columns.
-- Captures use normal viewports. Full-page capture changed the rail position in Chrome; a separate diagnostic confirmed that ordinary score editing preserved its position.
-- Native preview tools timed out. Captures use Playwright with installed Chrome. The development toolbar is omitted from captures.
-- Screenshots use real imported football data. Third-party crests can change.
+The calculator keeps its red football identity with a smaller loaded header, quieter surfaces, readable club names, and one competition action. Scores use direct numeric entry on every screen size. Edited results have a visible reset action and original-score caption. Bye rows use plain text. The full-table dialog keeps rank and club names visible while it scrolls.
 
 ## Council review
 
-Target: every named member must give the same screenshot set at least 9/10. Opus and Sol each approved the final set at 9/10. Muse and DeepSeek remain blocked by the OpenCode connection.
+Target: every named member must give the same final screenshot set at least 9/10. Round 5 is in progress. Earlier ratings apply only to their original screenshot sets.
 
-| Delegate | Round 1 | Round 2 | Round 3 | Round 4 |
-| --- | --- | --- | --- | --- |
-| Claude Opus 5.5 | 7/10 | 8/10 | no score | 9/10 |
-| GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 |
-| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | no score: server unavailable |
-| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | no score: server unavailable |
+| Delegate | Round 1 | Round 2 | Round 3 | Round 4 | Round 5 |
+| --- | --- | --- | --- | --- | --- |
+| Claude Opus 5.5 | 7/10 | 8/10 | no score | 9/10 | pending |
+| GPT Sol | 8/10 | 8.5/10 | 9/10 | 9/10 | pending |
+| Muse 1.3 Contributor | 7/10 | no score: server unavailable | no score | 9/10 | pending |
+| DeepSeek Free | 7.5/10 | no score: server unavailable | no score | 8.5/10 | pending |
 
-Round 1 found an off-screen active matchday, repeated mobile controls, small secondary text, excessive header space, weak reset feedback, and a false rank arrow for a tied withdrawn team. These have fixes and new captures. Direct mobile entry is deliberate: 16px text and 24px-wide fields preserve space for full club names. The mobile result link goes directly to the score fields while preserving the full table above them. Official shared ranks are retained, so the withdrawn teams legitimately share rank 15 without false movement. The review does not require a full rewrite of the existing large page files.
+Round 5 fixes DeepSeek's remaining findings: sticky rank/club columns, 44x44px reset targets, one direct-entry control model, and ellipses for long filter values. The full selected label is available in the field title. The mobile result link preserves quick access while keeping the full table above the matches. Official shared ranks remain stable after unrelated edits.
 
-## Screenshots
+## Checks
 
-- [Desktop before import](round4/desktop-empty.png)
-- [Desktop loaded](round4/desktop-loaded.png)
-- [Desktop edited](round4/desktop-edited.png)
-- [Mobile before import](round4/mobile-empty.png)
-- [Mobile loaded](round4/mobile-loaded.png)
-- [Mobile matches](round4/mobile-matches.png)
-- [Mobile edited](round4/mobile-edited.png)
-- [Mobile filters](round4/mobile-filter.png)
+- All 31 tests, lint, and production build pass on Node.js 26.
+- A live fussball.de import returned 200. Later captures reuse that exact response for stable match data.
+- Browser checks pass for score edits, full and single reset, active tab visibility at 320/390/768/1024/1440px, and no root overflow or page errors.
+- Reset targets measure 44x44px. Full-table points appear in the first 320px viewport. Rank and club bounds stay fixed after horizontal scrolling.
+- The filter dialog fits a 320x667 viewport and can scroll at shorter heights.
+- Vercel rejected the old Node.js 20 pin before compilation. Aligned Node.js 26 pins restored preview builds without package version changes.
+- Native preview tools timed out. Captures use Playwright and installed Chrome, omit the development toolbar, and move the pointer away from rows. Normal viewport captures avoid a Chrome full-page capture scroll side effect.
 
-- [Mobile at 320px](round4/mobile-320.png)
-- [Short phone filter dialog](round4/mobile-filter-short.png)
-- [Full table on a phone](round4/mobile-full-table.png)
+## Current screenshots
 
-## Preview runtime
+- [desktop-empty](round5/desktop-empty.png)
+- [desktop-loaded](round5/desktop-loaded.png)
+- [desktop-edited](round5/desktop-edited.png)
+- [desktop-table-bottom](round5/desktop-table-bottom.png)
+- [mobile-empty](round5/mobile-empty.png)
+- [mobile-loaded](round5/mobile-loaded.png)
+- [mobile-matches](round5/mobile-matches.png)
+- [mobile-edited](round5/mobile-edited.png)
+- [mobile-filter](round5/mobile-filter.png)
+- [mobile-320](round5/mobile-320.png)
+- [mobile-filter-short](round5/mobile-filter-short.png)
+- [mobile-full-table](round5/mobile-full-table.png)
+- [mobile-full-table-scrolled](round5/mobile-full-table-scrolled.png)
+- [mobile-table-bottom](round5/mobile-table-bottom.png)
 
-Vercel rejected Node.js 20 before compilation. Runtime pins now use Node.js 26, which also ran the local checks. Dependency versions did not change.
-
-## Final screenshot set
-
-Round 2 Sol: 8.5/10. Its remaining findings were poor word breaks at 320px and less name space after desktop edits. The new set keeps whole words, moves goal difference to the full table below 360px, and puts original-score captions under the controls. Browser checks, lint, and build pass after these changes. Opus round 2 scored 8/10. OpenCode is unreachable, so Muse and DeepSeek gave no second-round score. Sol gave round 3 a score of 9/10. Round 4 adds the remaining Opus fixes: points visible on opening the full table, a quieter disabled reset, and footer/legend captures. The two OpenCode members still need to review the final set.
-
-The Node.js 26 preview deployment passed on commit be2e97e.
-
-- [Desktop table footer and legend](round4/desktop-table-bottom.png)
-- [Mobile table footer and legend](round4/mobile-table-bottom.png)
-
-Round 4 Sol: 9/10 on all 13 images, with no design blockers. The long area value in the short filter dialog is a minor detail. Opus also gave all 13 final images 9/10 with no blockers. OpenCode still cannot run Muse or DeepSeek. Both Vercel checks passed on ff3f0ba.
+Older images remain available for the earlier review records.

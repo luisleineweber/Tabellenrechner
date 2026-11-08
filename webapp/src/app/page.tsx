@@ -457,40 +457,6 @@ export function TabellenrechnerPage({
     });
   }
 
-  function adjustMatchResult(
-    match: Competition["matchdays"][number]["matches"][number],
-    side: "home" | "guest",
-    delta: number,
-  ) {
-    if (match.isBye) {
-      return;
-    }
-
-    startTransition(() => {
-      setEditedResults((current) => {
-        const existing = current[match.id] ?? { home: "", guest: "" };
-        const homeBase = normalizeInputToNullableNumber(existing.home) ?? match.originalResult.home ?? 0;
-        const guestBase =
-          normalizeInputToNullableNumber(existing.guest) ?? match.originalResult.guest ?? 0;
-        const nextEntry = normalizeStoredMatchEdit(match, {
-          home: String(clamp(homeBase + (side === "home" ? delta : 0), 0, 99)),
-          guest: String(clamp(guestBase + (side === "guest" ? delta : 0), 0, 99)),
-        });
-        const next = {
-          ...current,
-        };
-
-        if (nextEntry) {
-          next[match.id] = nextEntry;
-        } else {
-          delete next[match.id];
-        }
-
-        return next;
-      });
-    });
-  }
-
   function resetMatchResult(matchId: string) {
     startTransition(() => {
       setEditedResults((current) => {
@@ -1122,16 +1088,6 @@ return (
                   className={styles.scoreInputGroup}
                   data-edited={committedEdit || pending || undefined}
                 >
-                  <button
-                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
-                    onClick={() => adjustMatchResult(match, "home", 1)}
-                    disabled={match.isBye}
-                    type="button"
-                    aria-label={`Heimtore von ${match.homeTeamName} gegen ${match.guestTeamName} um 1 erhöhen`}
-                    title="Heimtore erhöhen"
-                  >
-                    +
-                  </button>
 <div
                      className={styles.scoreBox}
                    >
@@ -1167,16 +1123,6 @@ return (
                        disabled={match.isBye}
                      />
                    </div>
-                  <button
-                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
-                    onClick={() => adjustMatchResult(match, "guest", 1)}
-                    disabled={match.isBye}
-                    type="button"
-                    aria-label={`Gasttore von ${match.guestTeamName} bei ${match.homeTeamName} um 1 erhöhen`}
-                    title="Gasttore erhöhen"
-                  >
-                    +
-                  </button>
                 <span
                   className={`${styles.matchOriginal} ${
                     committedEdit ? styles.matchOriginalVisible : styles.matchOriginalHidden
@@ -1276,6 +1222,7 @@ return (
             <span>{label}</span>
             <select
               value={filters[key]}
+              title={options.find((option) => option.id === filters[key])?.label}
               onChange={(event) =>
                 updateFilters({ [key]: event.target.value } as Partial<SearchFilters>)
               }
@@ -1654,7 +1601,7 @@ return (
               ? "Alle Partien dieses Vereins, Ergebnisse direkt bearbeitbar."
               : compactHeader
                 ? "Alle Spieltage untereinander, Tabelle rechts als Schnellzugriff."
-                : "Ergebnisfelder antippen und die Tabelle live berechnen."}
+                : "Heimtore links, Gasttore rechts. Ergebnis direkt eingeben."}
           </p>
         </div>
         <div className={styles.matchdayList}>{children}</div>
