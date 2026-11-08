@@ -684,7 +684,7 @@ export function TabellenrechnerPage({
     : "";
   const showAdjustmentNotice = competition ? hasTableAdjustments(competition) : false;
 
-  function renderTable() {
+  function renderTable(pointsFirst = false) {
     if (!competition) {
       return null;
     }
@@ -696,6 +696,7 @@ export function TabellenrechnerPage({
             <tr>
               <th>Pl.</th>
               <th>Vereine</th>
+              {pointsFirst ? <th className={styles.tableStatHeader}>Pkt.</th> : null}
               <th className={`${styles.tableStatHeader} ${styles.mobileOptionalStat}`}>Sp.</th>
               <th className={styles.colHideable} title="Siege">
                 S
@@ -708,7 +709,7 @@ export function TabellenrechnerPage({
               </th>
               <th className={styles.tableStatHeader}>Tore</th>
               <th className={`${styles.tableStatHeader} ${styles.goalDifferenceStat}`}>+/-</th>
-              <th className={styles.tableStatHeader}>Pkt.</th>
+              {!pointsFirst ? <th className={styles.tableStatHeader}>Pkt.</th> : null}
               <th aria-label="Platzveränderung"></th>
             </tr>
           </thead>
@@ -778,6 +779,7 @@ export function TabellenrechnerPage({
                       </div>
                     </button>
                   </td>
+                  {pointsFirst ? <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td> : null}
                   <td className={`${styles.tableStatCell} ${styles.mobileOptionalStat}`}>{row.games}</td>
                   <td className={styles.colHideable}>{row.wins}</td>
                   <td className={styles.colHideable}>{row.draws}</td>
@@ -786,7 +788,7 @@ export function TabellenrechnerPage({
                     {row.goalsFor}:{row.goalsAgainst}
                   </td>
                   <td className={`${styles.tableStatCell} ${styles.goalDifferenceStat}`}>{signedDelta(row.goalDifference)}</td>
-                  <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td>
+                  {!pointsFirst ? <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td> : null}
                   <td>
                     <span
                       className={
@@ -1790,7 +1792,7 @@ return (
           <p className={styles.panelText}>
             Alle Mannschaften und Werte. Seitlich wischen für alle Spalten.
           </p>
-          {renderTable()}
+          {renderTable(true)}
         </div>
       </dialog>
       <section className={`${styles.controlGrid} ${competition ? styles.controlGridLoaded : ""} ${competition && !isSearchExpanded ? styles.controlGridCollapsed : ""}`}>
