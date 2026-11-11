@@ -29,3 +29,9 @@
 - At 320px, preserve whole words in club names and move one secondary statistic to the full-table view. Keep original score captions under the score controls so edits do not reduce club-name space. Check both edited and unchanged rows.
 - An all-columns dialog must expose points beside club names on opening. Verify the initial horizontal viewport, not only the presence of hidden columns. Disabled controls must have less visual weight than enabled actions.
 - On a horizontally scrolling full table, keep rank and club columns fixed so later statistics retain their subject. Use 44px reset targets and one direct-entry score model on all screen sizes. Set ellipsis and preserve the full selected filter label in its title.
+
+- Council approval is not user approval. Moving the original score under the score box made edited rows taller, and the boxed 44px reset button looked heavier than the old plain arrow. Keep edit feedback in fixed columns so row height never changes on edit; measure row heights before and after an edit. Ask the user before trading their preferred look for a review score.
+- A score field that keeps its old value makes typing append digits. Select the value on focus (and keep the selection on mouseup) so a new digit replaces it.
+- Selects inside a `label` inherit the condensed heading font. Set the body font on filter labels and values explicitly.
+- Club logos on phone match rows were hidden by default with no measured reason. At 390px they fit without extra wrapping. Measure before hiding content for space; hide only at the width where it causes wraps (here below 360px).
+- Club crests were cropped into framed circles, which cut off shields and wide logos. Show crests with object-fit: contain and no radius, border, or backdrop; keep circles only for empty placeholders.

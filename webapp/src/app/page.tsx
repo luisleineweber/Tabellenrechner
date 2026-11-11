@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import Image from "next/image";
 import type {
+  FocusEvent as ReactFocusEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
   ReactNode,
@@ -108,6 +109,16 @@ function normalizeMetaValue(value: string): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+// Focusing a score selects it, so the next digit replaces the imported value.
+function selectScoreInput(event: ReactFocusEvent<HTMLInputElement>) {
+  event.currentTarget.select();
+}
+
+// Keep the focus selection: the mouseup after a click would otherwise collapse it.
+function keepScoreInputSelection(event: ReactMouseEvent<HTMLInputElement>) {
+  event.preventDefault();
 }
 
 function formatCompetitionRegion(competition: Competition): string {
@@ -445,6 +456,34 @@ export function TabellenrechnerPage({
         const next = {
           ...current,
         };
+
+        if (nextEntry) {
+          next[match.id] = nextEntry;
+        } else {
+          delete next[match.id];
+        }
+
+        return next;
+      });
+    });
+  }
+
+  function adjustMatchResult(
+    match: Competition["matchdays"][number]["matches"][number],
+    side: "home" | "guest",
+    delta: number,
+  ) {
+    startTransition(() => {
+      setEditedResults((current) => {
+        const existing = current[match.id] ?? { home: "", guest: "" };
+        const homeBase = normalizeInputToNullableNumber(existing.home) ?? match.originalResult.home ?? 0;
+        const guestBase =
+          normalizeInputToNullableNumber(existing.guest) ?? match.originalResult.guest ?? 0;
+        const nextEntry = normalizeStoredMatchEdit(match, {
+          home: String(clamp(homeBase + (side === "home" ? delta : 0), 0, 99)),
+          guest: String(clamp(guestBase + (side === "guest" ? delta : 0), 0, 99)),
+        });
+        const next = { ...current };
 
         if (nextEntry) {
           next[match.id] = nextEntry;
@@ -1084,56 +1123,76 @@ return (
 
                 {renderMatchTeam(match.homeTeamName, match.homeTeamLogoUrl, "home")}
 
-                {match.isBye ? <span className={styles.byeLabel}>Spielfrei</span> : <div
-                  className={styles.scoreInputGroup}
-                  data-edited={committedEdit || pending || undefined}
-                >
-<div
-                     className={styles.scoreBox}
-                   >
-                     <input
-                       className={styles.scoreInput}
-                       type="text"
-                       inputMode="numeric"
-                       aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                       value={
-                         editedResults[match.id]?.home ??
-                         (match.originalResult.home !== null ? String(match.originalResult.home) : "")
-                       }
-                       onChange={(event) => updateMatchResult(match, "home", event.target.value)}
-                       placeholder="-"
-                       disabled={match.isBye}
-                     />
-                     <span
-                       className={styles.scoreColon}
-                     >
-                       :
-                     </span>
-                     <input
-                       className={styles.scoreInput}
-                       type="text"
-                       inputMode="numeric"
-                       aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                       value={
-                         editedResults[match.id]?.guest ??
-                         (match.originalResult.guest !== null ? String(match.originalResult.guest) : "")
-                       }
-                       onChange={(event) => updateMatchResult(match, "guest", event.target.value)}
-                       placeholder="-"
-                       disabled={match.isBye}
-                     />
-                   </div>
-                <span
-                  className={`${styles.matchOriginal} ${
-                    committedEdit ? styles.matchOriginalVisible : styles.matchOriginalHidden
-                  }`}
-                  title={committedEdit ? `Original importiertes Ergebnis: ${originalResult}` : undefined}
-                >
-                  {committedEdit ? `Orig. ${originalResult}` : ""}
-                </span>
-                </div>}
+                {match.isBye ? <span className={styles.byeLabel}>Spielfrei</span> : (
+                  <div
+                    className={styles.scoreInputGroup}
+                    data-edited={committedEdit || pending || undefined}
+                  >
+                    <button
+                      className={styles.scoreStepper}
+                      onClick={() => adjustMatchResult(match, "home", 1)}
+                      type="button"
+                      aria-label={`Heimtore von ${match.homeTeamName} gegen ${match.guestTeamName} um 1 erhöhen`}
+                      title="Heimtor +1"
+                    >
+                      +
+                    </button>
+                    <div className={styles.scoreBox}>
+                      <input
+                        className={styles.scoreInput}
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                        value={
+                          editedResults[match.id]?.home ??
+                          (match.originalResult.home !== null ? String(match.originalResult.home) : "")
+                        }
+                        onChange={(event) => updateMatchResult(match, "home", event.target.value)}
+                        onFocus={selectScoreInput}
+                        onMouseUp={keepScoreInputSelection}
+                        placeholder="-"
+                      />
+                      <span className={styles.scoreColon}>:</span>
+                      <input
+                        className={styles.scoreInput}
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                        value={
+                          editedResults[match.id]?.guest ??
+                          (match.originalResult.guest !== null ? String(match.originalResult.guest) : "")
+                        }
+                        onChange={(event) => updateMatchResult(match, "guest", event.target.value)}
+                        onFocus={selectScoreInput}
+                        onMouseUp={keepScoreInputSelection}
+                        placeholder="-"
+                      />
+                    </div>
+                    <button
+                      className={styles.scoreStepper}
+                      onClick={() => adjustMatchResult(match, "guest", 1)}
+                      type="button"
+                      aria-label={`Gasttore von ${match.guestTeamName} bei ${match.homeTeamName} um 1 erhöhen`}
+                      title="Gasttor +1"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
 
                 {!match.isBye ? renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest") : null}
+
+                <span
+                  className={styles.matchOriginal}
+                  title={committedEdit ? `Original: ${originalResult}` : undefined}
+                >
+                  {committedEdit ? (
+                    <>
+                      <span className={styles.srOnly}>Original </span>
+                      {originalResult}
+                    </>
+                  ) : null}
+                </span>
 
                 <span className={styles.matchStatus}>
                   {hasStoredEdit ? (
@@ -1420,7 +1479,7 @@ return (
           </div>
           <div className={styles.tablePanelActions}>
             <div className={styles.mobileOnly}>
-              <button className={styles.secondaryButton} onClick={openFullTableDialog} type="button">Alle Spalten</button>
+              <button className={styles.secondaryButton} onClick={openFullTableDialog} type="button">Vollansicht</button>
             </div>
             <button
               className={`${styles.secondaryButton} ${styles.tableResetButton}`}
@@ -1601,7 +1660,7 @@ return (
               ? "Alle Partien dieses Vereins, Ergebnisse direkt bearbeitbar."
               : compactHeader
                 ? "Alle Spieltage untereinander, Tabelle rechts als Schnellzugriff."
-                : "Heimtore links, Gasttore rechts. Ergebnis direkt eingeben."}
+                : "Ergebnis antippen und überschreiben. Die Tabelle rechnet sofort mit."}
           </p>
         </div>
         <div className={styles.matchdayList}>{children}</div>
@@ -1614,8 +1673,7 @@ return (
       <>
         {renderCompetitionInfoBar()}
         <nav className={styles.mobileWorkspaceNav} aria-label="Tabellenrechner">
-          <a href="#match-results">Ergebnisse tippen ↓</a>
-          <a href="#live-table">Zur Tabelle</a>
+          <a href="#match-results">Zu den Spielen ↓</a>
         </nav>
         <section className={styles.workspace}>
           {renderTablePanel()}
@@ -1659,9 +1717,8 @@ return (
 return (
     <main className={styles.page}>
       <section className={`${styles.intro} ${competition ? styles.introCompact : ""}`} aria-labelledby="page-title">
-        <p className={styles.introEyebrow}>Amateurfußball</p>
         <h1 id="page-title" className={styles.introTitle}>
-          Dein Spieltag. Deine Tabelle.
+          Tabellen wie bei den Profis.
         </h1>
         <p className={styles.introText}>
           Der Tabellenrechner für den Amateurfußball. Lade deinen Wettbewerb, tippe Ergebnisse

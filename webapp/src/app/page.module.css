@@ -12,23 +12,10 @@
 
 
 .intro {
-  background:
-    linear-gradient(110deg, #fff 65%, #f9eef0 100%);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
-  padding: 22px 16px;
-}
-
-.introEyebrow {
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin: 0;
-  text-transform: uppercase;
+  padding: 20px 16px 4px;
 }
 
 .introTitle {
@@ -670,9 +657,6 @@
 }
 
 .mobileTableDockLogo {
-  background: var(--bg-alt);
-  border: 1px solid var(--border-light);
-  border-radius: 999px;
   display: block;
   flex: 0 0 18px;
   height: 18px;
@@ -849,6 +833,9 @@
 }
 
 .stackedMobileRailLogo {
+  background: none;
+  border: 0;
+  border-radius: 0;
   object-fit: contain;
 }
 
@@ -1110,15 +1097,12 @@
   min-width: 0;
 }
 
+/* Club crests keep their own shape: no circular crop, frame, or backdrop. */
 .teamLogo {
-  background: var(--bg-alt);
-  border: 1px solid var(--border-light);
-  border-radius: 999px;
   display: block;
   flex: 0 0 20px;
   height: 20px;
   object-fit: contain;
-  overflow: hidden;
   width: 20px;
 }
 
@@ -1486,8 +1470,8 @@
   align-items: center;
   border-bottom: 1px solid var(--border-light);
   display: grid;
-  /* kickoff | home | score | guest | status */
-  grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 44px;
+  /* kickoff | home | score | guest | original | status */
+  grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 36px 32px;
   min-height: 48px;
   padding: 6px 8px;
   gap: 0 8px;
@@ -1585,17 +1569,11 @@
 
 .matchTeamLogo,
 .matchTeamLogoPlaceholder {
-  display: none;
+  display: block;
   flex: 0 0 18px;
   height: 18px;
   object-fit: contain;
   width: 18px;
-}
-
-.matchTeamLogo {
-  background: var(--bg-alt);
-  border: 1px solid var(--border-light);
-  border-radius: 999px;
 }
 
 .matchTeamLogoPlaceholder {
@@ -2194,11 +2172,6 @@
     font-size: 15px;
   }
 
-  .matchTeamLogo,
-  .matchTeamLogoPlaceholder {
-    display: block;
-  }
-
   .mobileFilterDialog {
     display: none;
   }
@@ -2243,9 +2216,6 @@
 }
 
 .intro {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  border-left: 4px solid var(--accent);
   margin-bottom: 20px;
 }
 
@@ -2263,14 +2233,6 @@
 }
 
 @media (min-width: 640px) and (max-width: 899px) {
-  .matchRow {
-    grid-template-columns: 54px minmax(0, 1fr) auto minmax(0, 1fr) 40px 24px;
-  }
-
-  .matchOriginal {
-    min-width: 40px;
-  }
-
   .scoreInput {
     height: 18px;
     font-size: 14px;
@@ -2281,24 +2243,12 @@
 
 @media (min-width: 900px) {
   .intro {
-    padding: 32px;
+    padding: 28px 4px 8px;
   }
 
   .workspace {
     gap: 18px;
     grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  }
-
-  .matchRow {
-    grid-template-columns: 58px minmax(0, 1.14fr) auto minmax(0, 1.14fr) 42px 24px;
-  }
-
-  .matchOriginal {
-    min-width: 42px;
-  }
-
-  .matchStatus {
-    width: 24px;
   }
 
   .scoreInput {
@@ -2368,8 +2318,14 @@
   .scoreInputGroup { grid-area: score; }
   .scoreBox { gap: 3px; min-height: 44px; padding-inline: 6px; }
   .scoreInput { width: 24px; height: 32px; font-size: 16px; }
-  .matchStatus { grid-area: status; width: 24px; }
-  .matchStatusAction { min-height: 32px; min-width: 24px; }
+  .matchStatus { grid-area: status; }
+  .matchRow .matchStatusAction { min-height: 28px; }
+  .matchOriginal { grid-area: orig; align-self: start; line-height: 1.2; }
+  .matchOriginal:empty { display: none; }
+  .matchRow:has(.matchOriginal:not(:empty)) {
+    grid-template-areas: "kickoff home score status" "kickoff guest score orig";
+  }
+  .matchRow:has(.matchOriginal:not(:empty)) .matchStatus { align-self: end; display: flex; justify-content: center; }
   .infoBar { gap: 0; }
   .infoBarBlock { background: white; border: 0; padding: 10px 12px; gap: 4px; }
   .infoBarBlock + .infoBarBlock { padding-top: 0; }
@@ -2384,19 +2340,19 @@
   .mobileInlineUrlCard .secondaryButton { flex-shrink: 0; white-space: nowrap; }
 }
 
-.introCompact { padding: 16px 20px; gap: 6px; }
+.introCompact { padding-block: 8px 0; gap: 6px; }
 .introCompact .introTitle { font-size: 28px; }
 .introCompact .introText { display: none; }
 .infoBarMobileAction { display: none; }
 .byeLabel { color: var(--text-muted); font-size: 12px; justify-self: center; }
-.matchStatusAction { border: 1px solid var(--border); border-radius: 6px; color: var(--accent); font-size: 18px; }
-.matchOriginal { font-size: 11px; }
+.matchStatusAction { border-radius: 6px; color: var(--accent); font-size: 17px; }
+.matchStatusAction:hover { background: #fff0f2; }
 .table td:last-child { padding-right: 12px; }
 .desktopImportInline { border-bottom: 0; margin: 16px 0 0; padding-bottom: 0; }
 @media (min-width: 900px) {
   .controlGridCollapsed { display: none; }
   .infoBar { align-items: center; grid-template-columns: minmax(0, 1fr) auto auto; }
-  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 44px; }
+  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 36px 32px; }
 }
 @media (max-width: 899px) {
   .controlGridLoaded { display: none; }
@@ -2407,12 +2363,12 @@
     padding: 8px 16px; position: absolute; right: 12px; top: 10px;
   }
   .byeLabel { grid-area: score; }
-  .introCompact { padding: 16px 12px; }
+  .introCompact { padding: 12px 12px 0; }
   .introCompact .introTitle { font-size: 26px; }
 }
 
 @media (min-width: 640px) {
-  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 44px; }
+  .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 36px 32px; }
 }
 @media (max-width: 639px) {
   .matchRow[data-bye] { grid-template-areas: "kickoff home score status"; min-height: 56px; }
@@ -2425,12 +2381,11 @@
 .fullTableDialogCard .colHideable { display: table-cell; }
 .fullTableDialogCard .table { min-width: 600px; }
 @media (max-width: 899px) {
-  .mobileWorkspaceNav { align-items: center; display: flex; gap: 12px; margin: 0 12px 16px; }
-  .mobileWorkspaceNav a { background: white; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-weight: 500; padding: 10px 14px; }
-  .mobileWorkspaceNav a:first-child { border-color: var(--accent); color: var(--accent); }
-  .tablePanelHeader { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .tablePanelActions { justify-content: start; }
-  .tablePanelActions .secondaryButton { min-height: 40px; }
+  .mobileWorkspaceNav { align-items: center; display: flex; gap: 12px; margin: -8px 12px 8px; }
+  .mobileWorkspaceNav a { color: var(--accent); font-size: 13px; font-weight: 500; padding: 4px 0; }
+  .tablePanelHeader { align-items: start; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .tablePanelActions { gap: 6px; justify-content: end; }
+  .tablePanelActions .secondaryButton { font-size: 13px; min-height: 32px; padding: 4px 10px; }
   .fullTableDialogCard .tablePanelActions { display: none; }
   .scoreBox { background: white; border-color: #a9b3be; }
 }
@@ -2439,15 +2394,10 @@
 .fullTableDialogCard > .panelText { padding: 8px 12px; }
 .fullTableDialogCard .table td.teamCell { max-width: 180px; width: 180px; }
 
-.scoreInputGroup { position: relative; }
-.matchOriginal {
-  left: 50%; min-width: 0; position: absolute; top: calc(100% + 2px);
-  transform: translateX(-50%); white-space: nowrap;
-}
-.matchOriginalVisible { display: block; }
-.matchRow:has([data-edited]) { padding-bottom: 24px; }
 @media (max-width: 359px) {
   .goalDifferenceStat { display: none; }
+  /* Club names keep priority over logos on the narrowest phones. */
+  .matchTeamLogo, .matchTeamLogoPlaceholder { display: none; }
 }
 .fullTableDialogCard .goalDifferenceStat { display: table-cell; }
 
@@ -2456,8 +2406,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.matchStatus { width: 44px; }
-.matchStatusAction { min-width: 44px; min-height: 44px; }
+.matchStatus { width: 32px; }
+.matchStatusAction { min-width: 32px; min-height: 32px; }
 .fullTableDialogCard .table th:first-child,
 .fullTableDialogCard .table td:first-child {
   left: 0;
@@ -2483,4 +2433,79 @@
 .fullTableDialogCard .table th:nth-child(2) {
   background: var(--bg-alt);
   z-index: 3;
+}
+
+/* Original result: own column on wide screens, under the reset button on phones. */
+.matchOriginal {
+  color: var(--text-light);
+  display: block;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* Score steppers (+1) beside the score box; phones keep direct entry only. */
+.scoreStepper {
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  display: none;
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 700;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease;
+  width: 26px;
+}
+.scoreStepper:hover { background: #fff0f2; border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.scoreStepper:active { transform: translateY(1px); }
+@media (min-width: 640px) {
+  .scoreInputGroup { gap: 4px; }
+  .scoreStepper { display: inline-flex; }
+}
+
+/* Filter fields: quiet label, readable value, one type family. */
+.selectGroup span,
+.selectGroupWide span {
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
+  left: 13px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.selectGroup select,
+.selectGroupWide select {
+  font-family: var(--font-body), "Roboto", Arial, sans-serif;
+  font-weight: 500;
+  padding-left: 9px;
+}
+
+/* Desktop intro: one line of lead text. */
+@media (min-width: 900px) {
+  .introText { max-width: none; }
+}
+
+/* Phone search: a card that sits on the page background like the intro, not a full-bleed band. */
+@media (max-width: 899px) {
+  .controlGrid { background: transparent; border: 0; margin: 4px 12px 16px; }
+  .controlGrid .panel { border: 1px solid var(--border); border-radius: 12px; padding: 16px 12px; }
+  .emptyState { margin: 0 12px; }
 }

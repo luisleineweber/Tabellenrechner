@@ -153,3 +153,14 @@
 - [x] Check desktop and mobile screenshots, loaded and empty states, and run tests, lint, and build.
 - [x] Open draft PR #2 with the screenshot set and review record.
 - [x] Obtain 9/10 from every council member on the final set. Opus, Sol, Muse, and DeepSeek each approved all 14 round-5 screenshots at 9/10.
+
+## UI Polish – Luis-Feedback (Runde 6)
+- [x] Intro ohne Eyebrow, roten Rand und Kasten; Titel „Tabellen wie bei den Profis.“
+- [x] Originalergebnis wieder in eigener Spalte (Desktop) bzw. unter dem Reset-Pfeil (Mobile), ohne höhere Zeilen.
+- [x] Reset-Pfeil wieder ohne Rahmen; Plus-Buttons ab 640px zurück.
+- [x] Fokus auf ein Ergebnisfeld markiert den Wert, damit Tippen ihn überschreibt.
+- [x] Neue Hinweistexte, kompakter Mobile-Link „Zu den Spielen“, „Vollansicht“ statt „Alle Spalten“, kleinere Tabellen-Buttons.
+- [x] Filterfelder: Label und Wert in derselben Schrift, bündig.
+- [x] Show club logos in phone match rows from 360px; hide them below 360px so names do not wrap.
+- [x] Show club crests in their own shape (no circular crop) in table, match rows, and mobile rails.
+- [x] Desktop intro text on one line; phone search panel as an inset card instead of a full-bleed band.
