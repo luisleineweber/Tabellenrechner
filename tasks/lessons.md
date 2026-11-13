@@ -18,3 +18,22 @@
 - When a local browser import appears stuck but production works, verify the API endpoint directly and reload/restart the local dev server before treating it as an importer bug; stale dev-server requests or in-memory pending state can make the UI look permanently busy.
 - Score inputs must reserve visual width for the full accepted value range; if inputs sanitize to two digits, style them wide enough for two bold digits at every active breakpoint so imported results like 0:12 do not clip.
 - After widening form controls for readability, re-check the total control footprint against neighboring content; preserve accepted value readability with input width first, then reduce surrounding padding/gaps so team names keep priority.
+
+- When the user gives a newer skill path, read that exact copy before the next round. Use the current named members. Do not use an older duplicate skill file.
+- A score placeholder used a near-white color on a pale field. Use the muted text token and check empty score fields in the rendered UI. Keep phone score text at 16px and provide at least 24px targets.
+- A hidden-only utility on a button lost to a later button display rule. Put desktop-only actions inside a wrapper and verify the mobile render. Show the imported competition in its summary, not the unimported search selection.
+- Smooth scrollIntoView did not keep the selected matchday visible after a viewport change. Scroll only the matchday rail and observe its width. Verify the selected tab bounds after import and at every test width.
+
+- Rank assignment used each array index after a score edit. This broke official shared ranks and showed false movement for tied withdrawn teams. Preserve shared official ranks while their ranking criteria remain equal. Keep a regression test for unrelated score edits.
+- Vercel rejected the obsolete Node.js 20 pin before compilation. Match the root, webapp, lockfile, .nvmrc files, and setup guide to the supported runtime. Read deployment logs when a preview fails despite a passing local build.
+- At 320px, preserve whole words in club names and move one secondary statistic to the full-table view. Keep original score captions under the score controls so edits do not reduce club-name space. Check both edited and unchanged rows.
+- An all-columns dialog must expose points beside club names on opening. Verify the initial horizontal viewport, not only the presence of hidden columns. Disabled controls must have less visual weight than enabled actions.
+- On a horizontally scrolling full table, keep rank and club columns fixed so later statistics retain their subject. Use 44px reset targets and one direct-entry score model on all screen sizes. Set ellipsis and preserve the full selected filter label in its title.
+
+- Council approval is not user approval. Moving the original score under the score box made edited rows taller, and the boxed 44px reset button looked heavier than the old plain arrow. Keep edit feedback in fixed columns so row height never changes on edit; measure row heights before and after an edit. Ask the user before trading their preferred look for a review score.
+- A score field that keeps its old value makes typing append digits. Select the value on focus (and keep the selection on mouseup) so a new digit replaces it.
+- Selects inside a `label` inherit the condensed heading font. Set the body font on filter labels and values explicitly.
+- Club logos on phone match rows were hidden by default with no measured reason. At 390px they fit without extra wrapping. Measure before hiding content for space; hide only at the width where it causes wraps (here below 360px).
+- Club crests were cropped into framed circles, which cut off shields and wide logos. Show crests with object-fit: contain and no radius, border, or backdrop; keep circles only for empty placeholders.
+- A shared official rank was only compared with the previous row, and schedule-only teams (originalRank 0) sorted by name between tied ranked teams, which split ranks 4, 4 into 4, 6. Sort ranked teams before schedule-only teams when all criteria tie; test tie groups with an unranked team whose name sorts inside the group.
+- A grid-area rule lived in a wider media block (≤899px) than its grid-template-areas (≤639px), so 640–899px placed the bye label in an implicit track. Keep grid-area rules in the same media block as the template that defines the area.

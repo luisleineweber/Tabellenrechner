@@ -3,6 +3,7 @@ import {
   countCommittedEdits,
   countPendingEdits,
   getEffectiveResult,
+  getTableDelta,
   getTableZoneForRank,
   recalculateTable,
 } from "./table-calculator";
@@ -311,5 +312,44 @@ describe("recalculateTable", () => {
       "Team C-2-0",
       "Withdrawn Team-0-0",
     ]);
+  });
+
+  it("preserves an official shared rank when an unrelated score changes", () => {
+    const withdrawn = {
+      ...competition.importedTable[2], games: 0, wins: 0, draws: 0, losses: 0,
+      goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0,
+      rank: 4, originalRank: 4,
+    };
+    const sharedRankCompetition: Competition = {
+      ...competition,
+      importedTable: [...competition.importedTable,
+        { ...withdrawn, teamId: "d", teamName: "Withdrawn D" },
+        { ...withdrawn, teamId: "e", teamName: "Withdrawn E" },
+      ],
+      // A schedule-only team (no table row) whose name sorts between the shared-rank teams.
+      matchdays: [...competition.matchdays, {
+        number: 3,
+        label: "3. Spieltag",
+        url: "https://example.test/3",
+        matches: [{
+          id: "m3",
+          matchday: 3,
+          kickoffText: "So. 15.09.2025 | 11:00",
+          homeTeamId: "dx",
+          homeTeamName: "Withdrawn Dx",
+          guestTeamId: "",
+          guestTeamName: "spielfrei",
+          detailUrl: "",
+          originalResult: { home: null, guest: null },
+          isBye: true,
+        }],
+      }],
+    };
+    const table = recalculateTable(sharedRankCompetition, { m1: { home: "0", guest: "2" } });
+    const withdrawnRows = table.filter((row) => ["d", "e"].includes(row.teamId));
+    expect(withdrawnRows.map((row) => row.rank)).toEqual([4, 4]);
+    expect(table.find((row) => row.teamId === "dx")?.rank).toBe(6);
+    expect(withdrawnRows.map((row) => getTableDelta(row, sharedRankCompetition.importedTable).positionDelta))
+      .toEqual([0, 0]);
   });
 });

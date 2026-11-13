@@ -72,7 +72,7 @@ The root-level npm scripts proxy into `webapp`, so you can work from the reposit
 
 Requirements:
 
-- Node.js 20.x
+- Node.js 26.x
 - npm
 
 Install and run from the repository root:
@@ -100,7 +100,7 @@ Production is deployed on Vercel from the `webapp` root directory.
 
 - Framework preset: `Next.js`
 - Root Directory: `webapp`
-- Node.js: `20.x`
+- Node.js: `26.x`
 - Production URL env: `NEXT_PUBLIC_SITE_URL`
 - Search Console verification env: `GOOGLE_SITE_VERIFICATION`
 

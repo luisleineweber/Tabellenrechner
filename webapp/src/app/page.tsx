@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import Image from "next/image";
 import type {
+  FocusEvent as ReactFocusEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
   ReactNode,
@@ -13,7 +14,6 @@ import type {
   Competition,
   CompetitionOption,
   EditableResultMap,
-  Option,
   SearchBootstrap,
   SearchFilters,
   TableZone,
@@ -111,6 +111,16 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+// Focusing a score selects it, so the next digit replaces the imported value.
+function selectScoreInput(event: ReactFocusEvent<HTMLInputElement>) {
+  event.currentTarget.select();
+}
+
+// Keep the focus selection: the mouseup after a click would otherwise collapse it.
+function keepScoreInputSelection(event: ReactMouseEvent<HTMLInputElement>) {
+  event.preventDefault();
+}
+
 function formatCompetitionRegion(competition: Competition): string {
   const area = competition.area.trim();
   const association = competition.association.trim();
@@ -124,14 +134,6 @@ function formatCompetitionRegion(competition: Competition): string {
   }
 
   return `${area} (${association})`;
-}
-
-function getOptionLabel(options: Option[], value: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  return options.find((option) => option.id === value)?.label ?? null;
 }
 
 type MatchdayRailDragState = {
@@ -161,7 +163,6 @@ export function TabellenrechnerPage({
   const matchdayTabRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const matchdayRailDragRef = useRef<MatchdayRailDragState | null>(null);
   const suppressMatchdayRailClickUntilRef = useRef(0);
-  const resetStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterDialogRef = useRef<HTMLDialogElement | null>(null);
   const fullTableDialogRef = useRef<HTMLDialogElement | null>(null);
   const [bootstrap, setBootstrap] = useState<SearchBootstrap | null>(null);
@@ -169,14 +170,13 @@ export function TabellenrechnerPage({
   const [competitions, setCompetitions] = useState<CompetitionOption[]>([]);
   const [selectedCompetitionUrl, setSelectedCompetitionUrl] = useState("");
   const [urlInput, setUrlInput] = useState(SAMPLE_URL);
-  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isMobileInlineUrlExpanded, setIsMobileInlineUrlExpanded] = useState(false);
   const [isDesktopUrlImportExpanded, setIsDesktopUrlImportExpanded] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(true);
   const [isMatchdayRailDragging, setIsMatchdayRailDragging] = useState(false);
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [activeMatchdayNumber, setActiveMatchdayNumber] = useState<number | null>(null);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
-  const [armedResetMatchId, setArmedResetMatchId] = useState<string | null>(null);
   const [editedResults, setEditedResults] = useState<EditableResultMap>({});
   const [searchError, setSearchError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -220,38 +220,25 @@ export function TabellenrechnerPage({
       return;
     }
 
+    const rail = matchdayRailRef.current;
     const activeTab = matchdayTabRefs.current[activeMatchdayNumber];
+    if (!rail || !activeTab) return;
 
-    if (!activeTab) {
-      return;
-    }
-
-    activeTab.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
+    // Keep the selection visible after import and viewport changes without moving the page.
+    const revealActiveTab = () => {
+      const railRect = rail.getBoundingClientRect();
+      const tabRect = activeTab.getBoundingClientRect();
+      rail.scrollTo({
+        left: rail.scrollLeft + tabRect.left - railRect.left - (rail.clientWidth - tabRect.width) / 2,
+        behavior: "instant",
+      });
+    };
+    revealActiveTab();
+    const observer = new ResizeObserver(revealActiveTab);
+    observer.observe(rail);
+    observer.observe(activeTab);
+    return () => observer.disconnect();
   }, [activeMatchdayNumber, competition?.id]);
-
-  useEffect(() => {
-    const dialog = filterDialogRef.current;
-
-    if (!dialog) {
-      return;
-    }
-
-    const syncDialogState = () => {
-      setIsFilterDialogOpen(dialog.open);
-    };
-
-    dialog.addEventListener("close", syncDialogState);
-    dialog.addEventListener("cancel", syncDialogState);
-
-    return () => {
-      dialog.removeEventListener("close", syncDialogState);
-      dialog.removeEventListener("cancel", syncDialogState);
-    };
-  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 900px)");
@@ -263,7 +250,6 @@ export function TabellenrechnerPage({
       }
 
       filterDialogRef.current?.close();
-      setIsFilterDialogOpen(false);
       fullTableDialogRef.current?.close();
     };
 
@@ -271,14 +257,6 @@ export function TabellenrechnerPage({
 
     return () => {
       mediaQuery.removeEventListener("change", handleViewportChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (resetStatusTimeoutRef.current !== null) {
-        window.clearTimeout(resetStatusTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -384,6 +362,7 @@ export function TabellenrechnerPage({
       startTransition(() => {
         setCompetition(payload);
         setEditedResults({});
+        setIsSearchExpanded(false);
       });
 
       if (source === "url" && window.matchMedia("(min-width: 900px)").matches) {
@@ -391,7 +370,6 @@ export function TabellenrechnerPage({
       }
 
       filterDialogRef.current?.close();
-      setIsFilterDialogOpen(false);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Der Wettbewerb konnte nicht importiert werden.");
     } finally {
@@ -415,12 +393,10 @@ export function TabellenrechnerPage({
     }
 
     dialog.showModal();
-    setIsFilterDialogOpen(true);
   }
 
   function closeFilterDialog() {
     filterDialogRef.current?.close();
-    setIsFilterDialogOpen(false);
   }
 
   function openFullTableDialog() {
@@ -497,10 +473,6 @@ export function TabellenrechnerPage({
     side: "home" | "guest",
     delta: number,
   ) {
-    if (match.isBye) {
-      return;
-    }
-
     startTransition(() => {
       setEditedResults((current) => {
         const existing = current[match.id] ?? { home: "", guest: "" };
@@ -511,9 +483,7 @@ export function TabellenrechnerPage({
           home: String(clamp(homeBase + (side === "home" ? delta : 0), 0, 99)),
           guest: String(clamp(guestBase + (side === "guest" ? delta : 0), 0, 99)),
         });
-        const next = {
-          ...current,
-        };
+        const next = { ...current };
 
         if (nextEntry) {
           next[match.id] = nextEntry;
@@ -527,12 +497,6 @@ export function TabellenrechnerPage({
   }
 
   function resetMatchResult(matchId: string) {
-    if (resetStatusTimeoutRef.current !== null) {
-      window.clearTimeout(resetStatusTimeoutRef.current);
-      resetStatusTimeoutRef.current = null;
-    }
-    setArmedResetMatchId((current) => (current === matchId ? null : current));
-
     startTransition(() => {
       setEditedResults((current) => {
         const next = { ...current };
@@ -540,39 +504,6 @@ export function TabellenrechnerPage({
         return next;
       });
     });
-  }
-
-  function armMatchReset(matchId: string) {
-    if (resetStatusTimeoutRef.current !== null) {
-      window.clearTimeout(resetStatusTimeoutRef.current);
-    }
-
-    setArmedResetMatchId(matchId);
-    resetStatusTimeoutRef.current = setTimeout(() => {
-      setArmedResetMatchId((current) => (current === matchId ? null : current));
-      resetStatusTimeoutRef.current = null;
-    }, 1200);
-  }
-
-  function handleMatchStatusAction(
-    match: Competition["matchdays"][number]["matches"][number],
-    hasStoredEdit: boolean,
-  ) {
-    if (!hasStoredEdit) {
-      return;
-    }
-
-    if (window.matchMedia("(min-width: 900px)").matches) {
-      resetMatchResult(match.id);
-      return;
-    }
-
-    if (armedResetMatchId === match.id) {
-      resetMatchResult(match.id);
-      return;
-    }
-
-    armMatchReset(match.id);
   }
 
   function toggleTeamFocus(teamId: string) {
@@ -757,25 +688,8 @@ export function TabellenrechnerPage({
     ? `${competition.matchdays.length} Spieltage, ${importedMatchCount} Spiele`
     : "";
   const showAdjustmentNotice = competition ? hasTableAdjustments(competition) : false;
-  const selectedCompetitionLabel =
-    competitions.find((option) => option.url === selectedCompetitionUrl)?.label ?? null;
-  const selectedFilterSummary =
-    [
-      getOptionLabel(bootstrap?.associations ?? [], filters.associationId),
-      getOptionLabel(bootstrap?.seasons ?? [], filters.seasonId),
-      getOptionLabel(bootstrap?.areas ?? [], filters.areaId),
-    ]
-      .filter(Boolean)
-      .join(" · ") || "Filter öffnen und Wettbewerb auswählen";
-  const mobileFilterSummary = selectedCompetitionLabel ?? selectedFilterSummary;
-  const mobileFilterMeta = isLoadingCompetitionList
-    ? "Wettbewerbe werden geladen..."
-    : competitions.length
-      ? `${competitions.length} Wettbewerbe verfügbar`
-      : "Noch kein Wettbewerb ausgewählt";
-  const shouldCollapseMobileSearch = competition !== null;
 
-  function renderTable() {
+  function renderTable(pointsFirst = false) {
     if (!competition) {
       return null;
     }
@@ -787,6 +701,7 @@ export function TabellenrechnerPage({
             <tr>
               <th>Pl.</th>
               <th>Vereine</th>
+              {pointsFirst ? <th className={styles.tableStatHeader}>Pkt.</th> : null}
               <th className={`${styles.tableStatHeader} ${styles.mobileOptionalStat}`}>Sp.</th>
               <th className={styles.colHideable} title="Siege">
                 S
@@ -798,9 +713,9 @@ export function TabellenrechnerPage({
                 N
               </th>
               <th className={styles.tableStatHeader}>Tore</th>
-              <th className={styles.tableStatHeader}>+/-</th>
-              <th className={styles.tableStatHeader}>Pkt.</th>
-              <th></th>
+              <th className={`${styles.tableStatHeader} ${styles.goalDifferenceStat}`}>+/-</th>
+              {!pointsFirst ? <th className={styles.tableStatHeader}>Pkt.</th> : null}
+              <th aria-label="Platzveränderung"></th>
             </tr>
           </thead>
           <tbody>
@@ -813,7 +728,7 @@ export function TabellenrechnerPage({
                   ? `↑${delta.positionDelta}`
                   : delta.positionDelta < 0
                     ? `↓${Math.abs(delta.positionDelta)}`
-                    : "—";
+                    : "";
 
               return (
                 <tr
@@ -869,6 +784,7 @@ export function TabellenrechnerPage({
                       </div>
                     </button>
                   </td>
+                  {pointsFirst ? <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td> : null}
                   <td className={`${styles.tableStatCell} ${styles.mobileOptionalStat}`}>{row.games}</td>
                   <td className={styles.colHideable}>{row.wins}</td>
                   <td className={styles.colHideable}>{row.draws}</td>
@@ -876,8 +792,8 @@ export function TabellenrechnerPage({
                   <td className={styles.tableStatCell}>
                     {row.goalsFor}:{row.goalsAgainst}
                   </td>
-                  <td className={styles.tableStatCell}>{signedDelta(row.goalDifference)}</td>
-                  <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td>
+                  <td className={`${styles.tableStatCell} ${styles.goalDifferenceStat}`}>{signedDelta(row.goalDifference)}</td>
+                  {!pointsFirst ? <td className={`${styles.pointsCell} ${styles.tableStatCell}`}>{row.points}</td> : null}
                   <td>
                     <span
                       className={
@@ -1173,7 +1089,6 @@ return (
           const pending = hasPendingEdit(match, editedResults);
           const committedEdit = hasCommittedEdit(match, editedResults);
           const hasStoredEdit = Boolean(editedResults[match.id]);
-          const isResetArmed = armedResetMatchId === match.id;
           const originalResult =
             match.originalResult.home !== null && match.originalResult.guest !== null
               ? `${match.originalResult.home}:${match.originalResult.guest}`
@@ -1202,111 +1117,93 @@ return (
 
               <div
                 className={styles.matchRow}
+                data-bye={match.isBye || undefined}
               >
                 <span className={styles.matchKickoff}>{getKickoffTimeLabel(match.kickoffText)}</span>
 
                 {renderMatchTeam(match.homeTeamName, match.homeTeamLogoUrl, "home")}
 
-                <div
-                  className={styles.scoreInputGroup}
-                >
-                  <button
-                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
-                    onClick={() => adjustMatchResult(match, "home", 1)}
-                    disabled={match.isBye}
-                    type="button"
-                    aria-label={`Heimtore von ${match.homeTeamName} gegen ${match.guestTeamName} um 1 erhöhen`}
-                    title="Heimtore erhöhen"
+                {match.isBye ? <span className={styles.byeLabel}>Spielfrei</span> : (
+                  <div
+                    className={styles.scoreInputGroup}
+                    data-edited={committedEdit || pending || undefined}
                   >
-                    +
-                  </button>
-<div
-                     className={styles.scoreBox}
-                   >
-                     <input
-                       className={styles.scoreInput}
-                       type="text"
-                       inputMode="numeric"
-                       aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                       value={
-                         editedResults[match.id]?.home ??
-                         (match.originalResult.home !== null ? String(match.originalResult.home) : "")
-                       }
-                       onChange={(event) => updateMatchResult(match, "home", event.target.value)}
-                       placeholder="-"
-                       disabled={match.isBye}
-                     />
-                     <span
-                       className={styles.scoreColon}
-                     >
-                       :
-                     </span>
-                     <input
-                       className={styles.scoreInput}
-                       type="text"
-                       inputMode="numeric"
-                       aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
-                       value={
-                         editedResults[match.id]?.guest ??
-                         (match.originalResult.guest !== null ? String(match.originalResult.guest) : "")
-                       }
-                       onChange={(event) => updateMatchResult(match, "guest", event.target.value)}
-                       placeholder="-"
-                       disabled={match.isBye}
-                     />
-                   </div>
-                  <button
-                    className={`${styles.scoreStepper} ${styles.scoreStepperIncrease}`}
-                    onClick={() => adjustMatchResult(match, "guest", 1)}
-                    disabled={match.isBye}
-                    type="button"
-                    aria-label={`Gasttore von ${match.guestTeamName} bei ${match.homeTeamName} um 1 erhöhen`}
-                    title="Gasttore erhöhen"
-                  >
-                    +
-                  </button>
-                </div>
+                    <button
+                      className={styles.scoreStepper}
+                      onClick={() => adjustMatchResult(match, "home", 1)}
+                      type="button"
+                      aria-label={`Heimtore von ${match.homeTeamName} gegen ${match.guestTeamName} um 1 erhöhen`}
+                      title="Heimtor +1"
+                    >
+                      +
+                    </button>
+                    <div className={styles.scoreBox}>
+                      <input
+                        className={styles.scoreInput}
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={getHomeScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                        value={
+                          editedResults[match.id]?.home ??
+                          (match.originalResult.home !== null ? String(match.originalResult.home) : "")
+                        }
+                        onChange={(event) => updateMatchResult(match, "home", event.target.value)}
+                        onFocus={selectScoreInput}
+                        onMouseUp={keepScoreInputSelection}
+                        placeholder="-"
+                      />
+                      <span className={styles.scoreColon}>:</span>
+                      <input
+                        className={styles.scoreInput}
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={getGuestScoreInputLabel(match.homeTeamName, match.guestTeamName)}
+                        value={
+                          editedResults[match.id]?.guest ??
+                          (match.originalResult.guest !== null ? String(match.originalResult.guest) : "")
+                        }
+                        onChange={(event) => updateMatchResult(match, "guest", event.target.value)}
+                        onFocus={selectScoreInput}
+                        onMouseUp={keepScoreInputSelection}
+                        placeholder="-"
+                      />
+                    </div>
+                    <button
+                      className={styles.scoreStepper}
+                      onClick={() => adjustMatchResult(match, "guest", 1)}
+                      type="button"
+                      aria-label={`Gasttore von ${match.guestTeamName} bei ${match.homeTeamName} um 1 erhöhen`}
+                      title="Gasttor +1"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
 
-                {renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest")}
+                {!match.isBye ? renderMatchTeam(match.guestTeamName, match.guestTeamLogoUrl, "guest") : null}
 
                 <span
-                  className={`${styles.matchOriginal} ${
-                    committedEdit ? styles.matchOriginalVisible : styles.matchOriginalHidden
-                  }`}
-                  title={committedEdit ? `Original importiertes Ergebnis: ${originalResult}` : undefined}
+                  className={styles.matchOriginal}
+                  title={committedEdit ? `Original: ${originalResult}` : undefined}
                 >
-                  {committedEdit ? originalResult : ""}
+                  {committedEdit ? (
+                    <>
+                      <span className={styles.srOnly}>Original </span>
+                      {originalResult}
+                    </>
+                  ) : null}
                 </span>
 
                 <span className={styles.matchStatus}>
                   {hasStoredEdit ? (
                     <button
-                      className={`${styles.matchStatusAction} ${
-                        pending
-                          ? styles.matchStatePending
-                          : effectiveResult.home === null || effectiveResult.guest === null
-                            ? styles.matchStateOpen
-                            : styles.matchStateReady
-                      } ${isResetArmed ? styles.matchStatusActionArmed : ""}`}
-                      onClick={() => handleMatchStatusAction(match, hasStoredEdit)}
+                      className={styles.matchStatusAction}
+                      onClick={() => resetMatchResult(match.id)}
                       type="button"
-                      aria-label={
-                        isResetArmed
-                          ? `${getMatchResetLabel(match.homeTeamName, match.guestTeamName)}. Erneut tippen zum Bestätigen.`
-                          : getMatchResetLabel(match.homeTeamName, match.guestTeamName)
-                      }
-                      title={isResetArmed ? "Erneut tippen zum Zurücksetzen" : "Tippstatus"}
+                      aria-label={getMatchResetLabel(match.homeTeamName, match.guestTeamName)}
+                      title="Ergebnis zurücksetzen"
                     >
-                      <span className={styles.matchStatusPrimaryIcon} aria-hidden="true">
-                        {pending
-                          ? "···"
-                          : effectiveResult.home === null || effectiveResult.guest === null
-                            ? ""
-                            : "✓"}
-                      </span>
-                      <span className={styles.matchStatusResetIcon} aria-hidden="true">
-                        ✕
-                      </span>
+                      <span aria-hidden="true">↺</span>
                     </button>
                   ) : (
                     <span
@@ -1384,6 +1281,7 @@ return (
             <span>{label}</span>
             <select
               value={filters[key]}
+              title={options.find((option) => option.id === filters[key])?.label}
               onChange={(event) =>
                 updateFilters({ [key]: event.target.value } as Partial<SearchFilters>)
               }
@@ -1475,38 +1373,16 @@ return (
   function renderSearchPanelContent() {
     return (
       <>
-        <p className={styles.panelText}>
+        <p className={`${styles.panelText} ${competition ? styles.searchInstructionsLoaded : ""}`}>
           Wähle Verband, Saison und Liga, um einen Wettbewerb zu laden.
         </p>
-        <div className={styles.desktopOnly}>{renderDesktopUrlImportPanel()}</div>
         <div className={styles.desktopOnly}>
           {renderSearchFilterFields()}
           {renderSearchImportAction()}
           {searchError ? <p className={styles.error}>{searchError}</p> : null}
+          {renderDesktopUrlImportPanel()}
         </div>
         <div className={styles.mobileOnly}>
-          {shouldCollapseMobileSearch ? (
-            <>
-              <div className={styles.mobileFilterLauncher}>
-                <div className={styles.mobileFilterLauncherCopy}>
-                  <strong className={styles.mobileFilterLauncherTitle}>Wettbewerb auswählen</strong>
-                  <span className={styles.mobileFilterLauncherValue}>{mobileFilterSummary}</span>
-                  <span className={styles.mobileFilterLauncherMeta}>{mobileFilterMeta}</span>
-                </div>
-                <button
-                  className={`${styles.primaryButton} ${styles.mobileFilterLauncherButton}`}
-                  onClick={openFilterDialog}
-                  type="button"
-                >
-                  Filter
-                </button>
-              </div>
-              {!isFilterDialogOpen && isBootstrapping ? (
-                <span className={styles.statusNote}>Filter aktualisieren...</span>
-              ) : null}
-              {!isFilterDialogOpen && searchError ? <p className={styles.error}>{searchError}</p> : null}
-            </>
-          ) : (
             <div className={styles.mobileSearchInline}>
               <div className={styles.filterDialogSection}>
                 {renderSearchFilterFields()}
@@ -1536,7 +1412,6 @@ return (
                 ) : null}
               </div>
             </div>
-          )}
         </div>
       </>
     );
@@ -1550,6 +1425,7 @@ return (
     return (
       <div className={styles.infoBar}>
         <div className={styles.infoBarBlock}>
+          <button className={styles.infoBarMobileAction} onClick={openFilterDialog} type="button">Filter</button>
           <strong className={styles.infoBarValue}>{competition.name}</strong>
           <span className={styles.infoBarMeta}>{competitionMeta}</span>
           <a
@@ -1576,22 +1452,35 @@ return (
         <div className={styles.infoBarBlock}>
           <span className={styles.infoBarMeta}>{competitionStats}</span>
           <span className={styles.infoBarMeta}>
-            <strong className={styles.infoBarAccent}>{activeEdits} Änderungen</strong>
+            <strong className={activeEdits ? styles.infoBarAccent : undefined}>{activeEdits} {activeEdits === 1 ? "Änderung" : "Änderungen"}</strong>
             {pendingEdits ? `, ${pendingEdits} offen` : ""}, {resolvedMatchCount} Spiele gewertet
           </span>
+        </div>
+        <div className={styles.desktopOnly}>
+          <button className={styles.secondaryButton} onClick={() => setIsSearchExpanded((expanded) => !expanded)}
+            aria-expanded={isSearchExpanded} aria-controls="competition-search" type="button">
+            {isSearchExpanded ? "Auswahl schließen" : "Wettbewerb wechseln"}
+          </button>
         </div>
       </div>
     );
   }
 
   function renderTablePanel() {
+    const tableZones = Array.from(new Set(
+      competition?.importedTable.flatMap((row) => row.tableZone ? [row.tableZone] : []),
+    ));
     return (
-      <div className={styles.tablePanel}>
+      <div id="live-table" className={styles.tablePanel}>
         <div className={styles.tablePanelHeader}>
           <div className={styles.tablePanelHeading}>
             <h2>Tabelle</h2>
+            <p className={styles.tableHint}>Verein antippen: alle Spiele anzeigen</p>
           </div>
           <div className={styles.tablePanelActions}>
+            <div className={styles.mobileOnly}>
+              <button className={styles.secondaryButton} onClick={openFullTableDialog} type="button">Vollansicht</button>
+            </div>
             <button
               className={`${styles.secondaryButton} ${styles.tableResetButton}`}
               onClick={() => setEditedResults({})}
@@ -1606,6 +1495,12 @@ return (
           ) : null}
         </div>
         {renderTable()}
+        <div className={styles.tableLegend} aria-label="Tabellenzonen">
+          {tableZones.map((zone) => (
+            <span key={zone} data-zone={zone}>{getTableZoneLabel(zone)}</span>
+          ))}
+          <span>↑ / ↓ Veränderung zum Original</span>
+        </div>
       </div>
     );
   }
@@ -1644,7 +1539,7 @@ return (
         <div className={styles.matchdayToolbar}>
           <div className={styles.matchdayRailMeta}>
             <span className={styles.matchdayRailMetaLabel}>Spieltage</span>
-            <span className={styles.matchdayRailMetaHint}>Links/rechts wischen oder tippen</span>
+            <span className={styles.matchdayRailMetaHint}>Spieltag auswählen</span>
           </div>
           <div
             ref={matchdayRailRef}
@@ -1746,7 +1641,7 @@ return (
 
   function renderMatchesPanel(children: ReactNode, compactHeader = false) {
     return (
-      <div className={styles.matchesPanel}>
+      <div id="match-results" className={styles.matchesPanel}>
         <div
           className={`${styles.matchesPanelHeader} ${
             compactHeader ? styles.stackedMobileMatchesPanelHeader : ""
@@ -1765,7 +1660,7 @@ return (
               ? "Alle Partien dieses Vereins, Ergebnisse direkt bearbeitbar."
               : compactHeader
                 ? "Alle Spieltage untereinander, Tabelle rechts als Schnellzugriff."
-                : "Spieltag wählen, horizontal wischen und Ergebnisse anpassen."}
+                : "Ergebnis antippen und überschreiben. Die Tabelle rechnet sofort mit."}
           </p>
         </div>
         <div className={styles.matchdayList}>{children}</div>
@@ -1777,6 +1672,9 @@ return (
     return (
       <>
         {renderCompetitionInfoBar()}
+        <nav className={styles.mobileWorkspaceNav} aria-label="Tabellenrechner">
+          <a href="#match-results">Zu den Spielen ↓</a>
+        </nav>
         <section className={styles.workspace}>
           {renderTablePanel()}
           {renderMatchesPanel(renderDefaultMatchdaySections())}
@@ -1818,14 +1716,13 @@ return (
 
 return (
     <main className={styles.page}>
-      <section className={styles.intro} aria-labelledby="page-title">
-        <p className={styles.introEyebrow}>Amateurfußball</p>
+      <section className={`${styles.intro} ${competition ? styles.introCompact : ""}`} aria-labelledby="page-title">
         <h1 id="page-title" className={styles.introTitle}>
-          Tabellenrechner für fussball.de-Wettbewerbe
+          Tabellen wie bei den Profis.
         </h1>
         <p className={styles.introText}>
-          Importiere Staffeln von fussball.de, bearbeite Ergebnisse spieltagsgenau und sieh
-          sofort, wie sich die Live-Tabelle verändert.
+          Der Tabellenrechner für den Amateurfußball. Lade deinen Wettbewerb, tippe Ergebnisse
+          und sieh sofort, was sich in der Tabelle ändert.
         </p>
       </section>
       <dialog
@@ -1897,19 +1794,34 @@ return (
             </button>
           </div>
           <p className={styles.panelText}>
-            Die vollständige Tabelle mit allen Mannschaften und ihrem aktuellen Stand.
+            Alle Mannschaften und Werte. Seitlich wischen für alle Spalten.
           </p>
-          {renderTable()}
+          {renderTable(true)}
         </div>
       </dialog>
-      <section className={styles.controlGrid}>
+      <section className={`${styles.controlGrid} ${competition ? styles.controlGridLoaded : ""} ${competition && !isSearchExpanded ? styles.controlGridCollapsed : ""}`}>
         <article className={styles.panel}>
           <div className={styles.panelHeader}>
             <div>
-              <h2>Wettbewerb finden</h2>
+              <h2>{competition ? "Wettbewerb wechseln" : "Wettbewerb finden"}</h2>
             </div>
+            {competition ? (
+              <div className={styles.desktopOnly}>
+                <button
+                  className={styles.secondaryButton}
+                  onClick={() => setIsSearchExpanded((expanded) => !expanded)}
+                  aria-expanded={isSearchExpanded}
+                  aria-controls="competition-search"
+                  type="button"
+                >
+                  {isSearchExpanded ? "Schließen" : "Andere Liga oder Saison"}
+                </button>
+              </div>
+            ) : null}
           </div>
-          {renderSearchPanelContent()}
+          <div id="competition-search">
+            {renderSearchPanelContent()}
+          </div>
         </article>
       </section>
       {renderCompetitionView()}

@@ -283,6 +283,11 @@ export function recalculateTableFromResults(
       return right.goalsFor - left.goalsFor;
     }
 
+    // Schedule-only teams (originalRank 0) sort after ranked teams, so they never split a shared official rank.
+    if ((left.originalRank > 0) !== (right.originalRank > 0)) {
+      return left.originalRank > 0 ? -1 : 1;
+    }
+
     if (left.originalRank > 0 && right.originalRank > 0 && left.originalRank !== right.originalRank) {
       return left.originalRank - right.originalRank;
     }
@@ -290,10 +295,18 @@ export function recalculateTableFromResults(
     return left.teamName.localeCompare(right.teamName, "de");
   });
 
-  return rows.map((row, index) => ({
-    ...row,
-    rank: index + 1,
-  }));
+  let rank = 0;
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    const sharesOfficialRank = previous && row.originalRank > 0 &&
+      row.originalRank === previous.originalRank &&
+      row.points === previous.points &&
+      row.goalDifference === previous.goalDifference &&
+      row.goalsFor === previous.goalsFor &&
+      (row.games === 0) === (previous.games === 0);
+    if (!sharesOfficialRank) rank = index + 1;
+    return { ...row, rank };
+  });
 }
 
 export function recalculateTable(competition: Competition, edits: EditableResultMap): TableRow[] {
