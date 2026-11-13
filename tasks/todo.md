@@ -166,3 +166,4 @@
 - [x] Desktop intro text on one line; phone search panel as an inset card instead of a full-bleed band.
 - [x] Sol S1: rank schedule-only teams after ranked teams on full ties so shared official ranks stay intact (regression test).
 - [x] Sol S2: scope the bye label grid-area to the phone grid; verified centered at 700px.
+- [x] Sol S3: score stepper keeps cleared fields empty and changes only the stepped side (pure helper + tests).

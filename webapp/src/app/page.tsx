@@ -35,6 +35,7 @@ import {
   getHomeScoreInputLabel,
   getMatchResetLabel,
 } from "@/lib/match-accessibility";
+import { stepScore } from "@/lib/score-stepper";
 import {
   countMatchdayDates,
   getKickoffDateKey,
@@ -475,14 +476,10 @@ export function TabellenrechnerPage({
   ) {
     startTransition(() => {
       setEditedResults((current) => {
-        const existing = current[match.id] ?? { home: "", guest: "" };
-        const homeBase = normalizeInputToNullableNumber(existing.home) ?? match.originalResult.home ?? 0;
-        const guestBase =
-          normalizeInputToNullableNumber(existing.guest) ?? match.originalResult.guest ?? 0;
-        const nextEntry = normalizeStoredMatchEdit(match, {
-          home: String(clamp(homeBase + (side === "home" ? delta : 0), 0, 99)),
-          guest: String(clamp(guestBase + (side === "guest" ? delta : 0), 0, 99)),
-        });
+        const nextEntry = normalizeStoredMatchEdit(
+          match,
+          stepScore(current[match.id], match.originalResult, side, delta),
+        );
         const next = { ...current };
 
         if (nextEntry) {
