@@ -1,0 +1,44 @@
+<div id="ui-comparison">
+  <style>
+    #ui-comparison .view-control { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--font-size-base, 14px) * .75); }
+    #ui-comparison .comparison-panel { margin-top: calc(var(--font-size-base, 14px) * 1); }
+    #ui-comparison .phone-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(var(--font-size-base, 14px) * 1); align-items: start; }
+    #ui-comparison .desktop-pair { display: grid; gap: calc(var(--font-size-base, 14px) * 1); }
+    #ui-comparison figure { margin: 0; min-width: 0; }
+    #ui-comparison figcaption { font-weight: 500; margin-bottom: calc(var(--font-size-base, 14px) * .5); }
+    #ui-comparison img { display: block; width: 100%; height: auto; }
+    #ui-comparison [hidden] { display: none !important; }
+    @media (max-width: 560px) { #ui-comparison .phone-pair { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+  <div class="view-control">
+    <label for="comparison-view">View</label>
+    <select id="comparison-view" class="form-select">
+      <option value="matches">Phone matches (390 x 844)</option>
+      <option value="desktop">Desktop overview (1440 x 1000)</option>
+      <option value="mobile">Phone table (390 x 844)</option>
+    </select>
+  </div>
+  <div class="comparison-panel phone-pair" data-view="matches">
+    <figure><figcaption>Before</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/before-matches.png" alt="Before: compact phone match rows with cut club names and plus buttons." width="390" height="844"></figure>
+    <figure><figcaption>After</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/after-matches.png" alt="After: full club names, direct score entry, and plain bye rows." width="390" height="844"></figure>
+  </div>
+  <div class="comparison-panel desktop-pair" data-view="desktop" hidden>
+    <figure><figcaption>Before</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/before-desktop.png" alt="Before: the large competition form pushes the desktop table and matches down." width="1440" height="1000"></figure>
+    <figure><figcaption>After</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/after-desktop.png" alt="After: a compact header and closed competition form leave more room for the table and matches." width="1440" height="1000"></figure>
+  </div>
+  <div class="comparison-panel phone-pair" data-view="mobile" hidden>
+    <figure><figcaption>Before</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/before-mobile.png" alt="Before: dense phone controls and club names cut short in the table." width="390" height="844"></figure>
+    <figure><figcaption>After</figcaption><img src="C:/Users/llein/.t3/worktrees/Tabellenrechner/t3-99a2099e/output/ui-comparison/after-mobile.png" alt="After: a compact competition header, quick results link, and readable table names." width="390" height="844"></figure>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('ui-comparison');
+      const choice = root.querySelector('#comparison-view');
+      choice.addEventListener('change', () => {
+        root.querySelectorAll('[data-view]').forEach(panel => {
+          panel.hidden = panel.dataset.view !== choice.value;
+        });
+      });
+    })();
+  </script>
+</div>
