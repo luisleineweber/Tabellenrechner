@@ -326,10 +326,29 @@ describe("recalculateTable", () => {
         { ...withdrawn, teamId: "d", teamName: "Withdrawn D" },
         { ...withdrawn, teamId: "e", teamName: "Withdrawn E" },
       ],
+      // A schedule-only team (no table row) whose name sorts between the shared-rank teams.
+      matchdays: [...competition.matchdays, {
+        number: 3,
+        label: "3. Spieltag",
+        url: "https://example.test/3",
+        matches: [{
+          id: "m3",
+          matchday: 3,
+          kickoffText: "So. 15.09.2025 | 11:00",
+          homeTeamId: "dx",
+          homeTeamName: "Withdrawn Dx",
+          guestTeamId: "",
+          guestTeamName: "spielfrei",
+          detailUrl: "",
+          originalResult: { home: null, guest: null },
+          isBye: true,
+        }],
+      }],
     };
     const table = recalculateTable(sharedRankCompetition, { m1: { home: "0", guest: "2" } });
     const withdrawnRows = table.filter((row) => ["d", "e"].includes(row.teamId));
     expect(withdrawnRows.map((row) => row.rank)).toEqual([4, 4]);
+    expect(table.find((row) => row.teamId === "dx")?.rank).toBe(6);
     expect(withdrawnRows.map((row) => getTableDelta(row, sharedRankCompetition.importedTable).positionDelta))
       .toEqual([0, 0]);
   });

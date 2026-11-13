@@ -35,3 +35,5 @@
 - Selects inside a `label` inherit the condensed heading font. Set the body font on filter labels and values explicitly.
 - Club logos on phone match rows were hidden by default with no measured reason. At 390px they fit without extra wrapping. Measure before hiding content for space; hide only at the width where it causes wraps (here below 360px).
 - Club crests were cropped into framed circles, which cut off shields and wide logos. Show crests with object-fit: contain and no radius, border, or backdrop; keep circles only for empty placeholders.
+- A shared official rank was only compared with the previous row, and schedule-only teams (originalRank 0) sorted by name between tied ranked teams, which split ranks 4, 4 into 4, 6. Sort ranked teams before schedule-only teams when all criteria tie; test tie groups with an unranked team whose name sorts inside the group.
+- A grid-area rule lived in a wider media block (≤899px) than its grid-template-areas (≤639px), so 640–899px placed the bye label in an implicit track. Keep grid-area rules in the same media block as the template that defines the area.

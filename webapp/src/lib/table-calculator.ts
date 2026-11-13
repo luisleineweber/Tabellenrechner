@@ -283,6 +283,11 @@ export function recalculateTableFromResults(
       return right.goalsFor - left.goalsFor;
     }
 
+    // Schedule-only teams (originalRank 0) sort after ranked teams, so they never split a shared official rank.
+    if ((left.originalRank > 0) !== (right.originalRank > 0)) {
+      return left.originalRank > 0 ? -1 : 1;
+    }
+
     if (left.originalRank > 0 && right.originalRank > 0 && left.originalRank !== right.originalRank) {
       return left.originalRank - right.originalRank;
     }

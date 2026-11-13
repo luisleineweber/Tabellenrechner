@@ -164,3 +164,5 @@
 - [x] Show club logos in phone match rows from 360px; hide them below 360px so names do not wrap.
 - [x] Show club crests in their own shape (no circular crop) in table, match rows, and mobile rails.
 - [x] Desktop intro text on one line; phone search panel as an inset card instead of a full-bleed band.
+- [x] Sol S1: rank schedule-only teams after ranked teams on full ties so shared official ranks stay intact (regression test).
+- [x] Sol S2: scope the bye label grid-area to the phone grid; verified centered at 700px.

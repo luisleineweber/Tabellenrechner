@@ -2362,7 +2362,6 @@
     color: var(--text); cursor: pointer; display: block; min-height: 40px;
     padding: 8px 16px; position: absolute; right: 12px; top: 10px;
   }
-  .byeLabel { grid-area: score; }
   .introCompact { padding: 12px 12px 0; }
   .introCompact .introTitle { font-size: 26px; }
 }
@@ -2371,6 +2370,7 @@
   .matchRow { grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr) 36px 32px; }
 }
 @media (max-width: 639px) {
+  .byeLabel { grid-area: score; }
   .matchRow[data-bye] { grid-template-areas: "kickoff home score status"; min-height: 56px; }
 }
 
