@@ -2,7 +2,7 @@
   "name": "tabellenrechner",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "npm --prefix webapp run dev",

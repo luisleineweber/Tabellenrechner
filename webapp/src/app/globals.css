@@ -1,18 +1,18 @@
 :root {
   --bg: #ffffff;
-  --bg-alt: #f5f5f5;
-  --border: #ddd;
-  --border-light: #e8e8e8;
+  --bg-alt: #f6f7f8;
+  --border: #dce0e4;
+  --border-light: #edf0f2;
   --accent: #e3001e;
   --accent-dark: #b60019;
-  --text: #1a1a1a;
-  --text-muted: #666;
-  --text-light: #999;
+  --text: #202830;
+  --text-muted: #596570;
+  --text-light: #697580;
   --success: #2d7d46;
   --warning: #d68910;
   --danger: #c0392b;
   --row-even: #f9f9f9;
-  --content-max-width: 1560px;
+  --content-max-width: 1440px;
   --site-header-height: 0px;
   --site-gutter: clamp(10px, 1.8vw, 24px);
 }
@@ -26,7 +26,7 @@ body {
 body {
   min-height: 100vh;
   color: var(--text);
-  background: #f4f1ed;
+  background: #f3f5f6;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body), "Roboto", Arial, sans-serif;
@@ -90,7 +90,7 @@ textarea {
 }
 
 .siteFooter {
-  background: linear-gradient(180deg, #faf8f6 0%, #f1ede9 100%);
+  background: transparent;
   border-top: 1px solid var(--border);
   margin-top: 18px;
 }
@@ -168,4 +168,13 @@ textarea {
     height: 18px;
     width: 18px;
   }
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
